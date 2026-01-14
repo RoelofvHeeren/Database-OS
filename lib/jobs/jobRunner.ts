@@ -45,7 +45,20 @@ export async function processNextAuditJob(): Promise<void> {
 
         // Step 2: Inference
         await updateProgress(auditRun.id, 35, 'Inferring entity model...');
-        const model = await inferModel(snapshot);
+
+        // Normalize snapshot to ensure arrays are proper arrays (Prisma JSON can return objects)
+        const normalizedSnapshot = {
+            ...snapshot,
+            tables: snapshot.tables.map(table => ({
+                ...table,
+                columns: Array.isArray(table.columns) ? table.columns : Object.values(table.columns || {}),
+                indexes: Array.isArray(table.indexes) ? table.indexes : Object.values(table.indexes || {}),
+                constraints: Array.isArray(table.constraints) ? table.constraints : Object.values(table.constraints || {}),
+            })),
+            relationships: Array.isArray(snapshot.relationships) ? snapshot.relationships : Object.values(snapshot.relationships || {}),
+        };
+
+        const model = await inferModel(normalizedSnapshot);
 
         await updateProgress(auditRun.id, 50, `Identified ${model.entities.length} entities`);
 
@@ -56,7 +69,7 @@ export async function processNextAuditJob(): Promise<void> {
         await client.connect();
 
         try {
-            const issues = await runAudit(snapshot, model, client);
+            const issues = await runAudit(normalizedSnapshot as any, model, client);
 
             await updateProgress(auditRun.id, 80, `Found ${issues.length} issues`);
 
