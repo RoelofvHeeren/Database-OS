@@ -2,6 +2,7 @@ import { Client } from 'pg';
 import { prisma } from '../db';
 import { decrypt } from '../encryption/crypto';
 import { introspectDatabase } from '../introspection/inspector';
+import { DbSnapshot } from '../introspection/types';
 import { inferModel } from '../modeling/inferrer';
 import { runAudit } from '../audit/engine/runAudit';
 import { updateProgress } from './progressTracker';
@@ -58,7 +59,7 @@ export async function processNextAuditJob(): Promise<void> {
             relationships: Array.isArray(snapshot.relationships) ? snapshot.relationships : Object.values(snapshot.relationships || {}),
         };
 
-        const model = await inferModel(normalizedSnapshot);
+        const model = await inferModel(normalizedSnapshot as DbSnapshot);
 
         await updateProgress(auditRun.id, 50, `Identified ${model.entities.length} entities`);
 
