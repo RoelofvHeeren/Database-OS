@@ -1,0 +1,73 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+model Connection {
+  id                String      @id @default(cuid())
+  name              String
+  encryptedUrl      String      @map("encrypted_url")
+  createdAt         DateTime    @default(now()) @map("created_at")
+  updatedAt         DateTime    @updatedAt @map("updated_at")
+  auditRuns         AuditRun[]
+
+  @@map("connections")
+}
+
+model AuditRun {
+  id            String       @id @default(cuid())
+  connectionId  String       @map("connection_id")
+  connection    Connection   @relation(fields: [connectionId], references: [id], onDelete: Cascade)
+  status        AuditStatus  @default(QUEUED)
+  progress      Int          @default(0)
+  logsJson      Json         @default("[]") @map("logs_json")
+  startedAt     DateTime?    @map("started_at")
+  completedAt   DateTime?    @map("completed_at")
+  createdAt     DateTime     @default(now()) @map("created_at")
+  auditResult   AuditResult?
+
+  @@index([connectionId])
+  @@index([status])
+  @@map("audit_runs")
+}
+
+model AuditResult {
+  id            String   @id @default(cuid())
+  auditRunId    String   @unique @map("audit_run_id")
+  auditRun      AuditRun @relation(fields: [auditRunId], references: [id], onDelete: Cascade)
+  snapshotJson  Json     @map("snapshot_json")
+  modelJson     Json     @map("model_json")
+  issuesJson    Json     @map("issues_json")
+  fixPackJson   Json     @map("fix_pack_json")
+  createdAt     DateTime @default(now()) @map("created_at")
+
+  @@map("audit_results")
+}
+
+model Rule {
+  id          String   @id @default(cuid())
+  name        String
+  description String
+  category    String
+  ruleJson    Json     @map("rule_json")
+  isActive    Boolean  @default(true) @map("is_active")
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+
+  @@index([category])
+  @@index([isActive])
+  @@map("rules")
+}
+
+enum AuditStatus {
+  QUEUED
+  RUNNING
+  COMPLETED
+  FAILED
+}
