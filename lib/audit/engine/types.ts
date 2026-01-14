@@ -1,6 +1,6 @@
 import { Client } from 'pg';
-import { DbSnapshot } from '../introspection/types';
-import { InferredModel } from '../modeling/types';
+import { DbSnapshot } from '../../introspection/types';
+import { InferredModel } from '../../modeling/types';
 
 // Audit Module Types
 export interface AuditModule {
