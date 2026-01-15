@@ -54,6 +54,13 @@ CRITICAL REQUIREMENT 3: TYPE CONSISTENCY (UUID vs INT)
 CRITICAL REQUIREMENT 4: NAMING CONVENTIONS
 - For Link Tables, use the suffix "_link" unless the issue summary suggests a different project-specific convention.
 
+CRITICAL REQUIREMENT 5: REFERENCE INTEGRITY & TABLE EXISTENCE
+- DO NOT assume a table exists just because a column is named \`[entity]_id\`.
+- Example: \`agent_id\` might refer to a table named \`users\` (not \`agents\`).
+- CHECK the provided "ISSUES FOUND" for context on existing tables.
+- If you are creating a Foreign Key, ENSURE the target table exists. If uncertain, add a comment in the SQL: \`-- WARNING: Verify target table name\`.
+
+
 Refine the input plan into 4 categories:
 1. migrations: Array of SQL statements to fix the schema (DDL) AND move data (DML). 
    - Each item has: { sql: string, description: string, reasoning: string, safetyRating: 'SAFE'|'RISKY'|'DANGEROUS' }.
