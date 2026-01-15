@@ -34,7 +34,8 @@ export default function FixPackTab({ auditResult }: { auditResult: any }) {
 
         setIsApplying(true);
         try {
-            const res = await fetch(`/api/audits/${auditResult.auditId}/fix`, {
+            // Fix: Use auditRunId, not auditId (which doesn't exist on AuditResult)
+            const res = await fetch(`/api/audits/${auditResult.auditRunId}/fix`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ migrationIndices: selectedIndices })
