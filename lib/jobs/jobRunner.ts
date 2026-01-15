@@ -131,8 +131,17 @@ async function executeAuditJob(auditRun: any): Promise<void> {
             await updateProgress(auditRun.id, 80, `Found ${issues.length} issues`);
 
             // Step 4: Generate fix plans (AI-powered + Heuristic Aggregation)
-            await updateProgress(auditRun.id, 85, 'Generating AI fix plans...');
+            console.log('[Job] Starting fix plan generation');
+            await updateProgress(auditRun.id, 80, 'Generating AI fix plans...');
 
+            // Wrap AI generation in timeout
+            const planPromise = generateFixPlans(issues);
+            const planTimeout = new Promise((_, reject) =>
+                setTimeout(() => reject(new Error('Fix plan generation timeout after 2 minutes')), 2 * 60 * 1000)
+            );
+
+            const aiGeneratedPlan = await Promise.race([planPromise, planTimeout]) as any;
+            console.log('[Job] Fix plan generation complete');
             // 1. Get heuristic fixes from issues
             const heuristicMigrations = issues
                 .filter(i => i.fixPlan && i.fixPlan.migrations.length > 0)
@@ -140,7 +149,6 @@ async function executeAuditJob(auditRun: any): Promise<void> {
 
             // 2. Generate deep analysis fixes with AI
             // We pass the issues to the AI to find complex patterns and comprehensive fixes
-            const aiGeneratedPlan = await generateFixPlans(issues);
 
             // [PROACTIVE] Step 5: Run Proactive Investigation
             // COMPLETELY DISABLED - causing hangs
