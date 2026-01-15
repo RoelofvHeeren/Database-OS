@@ -2,20 +2,25 @@ import { GitBranch, AlertTriangle, Info, ShieldAlert, CheckCircle2 } from 'lucid
 
 export default function DivergenceTab({ auditResult }: { auditResult: any }) {
     const issues = auditResult?.issuesJson || [];
+    const fixPlan = auditResult?.fixPackJson?.migrations || [];
 
     // Filter logic for divergence risks
-    // 1. Multi-parent relationships (Divergent Hierarchy)
-    // 2. Missing uniqueness on critical identity columns
-    // 3. Denormalized fields without enforcement
-
     const divergenceIssues = issues.filter((issue: any) =>
         issue.title.includes("Multi-parent") ||
         issue.title.includes("Missing unique constraint") ||
         issue.category === 'RELATIONSHIP'
-    ).map((issue: any) => ({
-        ...issue,
-        riskScore: issue.title.includes("Multi-parent") ? 'HIGH' : 'MEDIUM'
-    }));
+    ).map((issue: any) => {
+        // Simple heuristic: Does any fix description match the issue title?
+        const isCovered = fixPlan.some((f: any) =>
+            f.description.toLowerCase().includes(issue.title.toLowerCase()) ||
+            (issue.table && f.description.toLowerCase().includes(issue.table.toLowerCase()))
+        );
+        return {
+            ...issue,
+            riskScore: issue.title.includes("Multi-parent") ? 'HIGH' : 'MEDIUM',
+            isCovered
+        }
+    });
 
     return (
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
@@ -43,14 +48,25 @@ export default function DivergenceTab({ auditResult }: { auditResult: any }) {
                                     <div className="shrink-0 pt-1">
                                         <AlertTriangle className="w-5 h-5 text-orange-500" />
                                     </div>
-                                    <div className="space-y-2">
+                                    <div className="space-y-2 w-full">
                                         <div className="flex items-center justify-between">
                                             <h4 className="font-bold text-white group-hover:text-orange-400 transition-colors">
                                                 {issue.title}
                                             </h4>
-                                            <span className="text-xs font-bold bg-orange-500/20 text-orange-400 px-2 py-0.5 rounded border border-orange-500/20">
-                                                {issue.riskScore} RISK
-                                            </span>
+                                            <div className="flex gap-2">
+                                                {issue.isCovered ? (
+                                                    <span className="text-[10px] font-bold bg-teal-500/20 text-teal-400 px-2 py-0.5 rounded border border-teal-500/20 flex items-center gap-1">
+                                                        <CheckCircle2 className="w-3 h-3" /> FIX INCLUDED
+                                                    </span>
+                                                ) : (
+                                                    <span className="text-[10px] font-bold bg-gray-500/20 text-gray-400 px-2 py-0.5 rounded border border-gray-500/20">
+                                                        MANUAL REVIEW
+                                                    </span>
+                                                )}
+                                                <span className="text-[10px] font-bold bg-orange-500/20 text-orange-400 px-2 py-0.5 rounded border border-orange-500/20">
+                                                    {issue.riskScore} RISK
+                                                </span>
+                                            </div>
                                         </div>
                                         <p className="text-sm text-gray-400 leading-relaxed">
                                             {issue.description}

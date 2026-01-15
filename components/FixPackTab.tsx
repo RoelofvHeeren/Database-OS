@@ -17,6 +17,7 @@ export default function FixPackTab({ auditResult }: { auditResult: any }) {
     }
 
     const [selectedIndices, setSelectedIndices] = useState<number[]>([]);
+    const [showPreview, setShowPreview] = useState(false);
 
     // Select All / Deselect All
     const toggleSelectAll = () => {
@@ -35,18 +36,35 @@ export default function FixPackTab({ auditResult }: { auditResult: any }) {
         }
     };
 
-    const copyInstruction = () => {
+    const generatedInstruction = (() => {
         const selectedFixes = migrations.filter((_: any, i: number) => selectedIndices.includes(i));
         const combinedSql = selectedFixes.map((f: any) => `-- ${f.description}\n${f.sql}`).join('\n\n');
 
-        const instruction = `Please apply the following database fixes to resolve integrity issues:
+        const appInstructions = auditResult?.fixPackJson?.appCodeChanges?.length
+            ? `\n\nAPPLICATION INSTRUCTIONS:\n${auditResult.fixPackJson.appCodeChanges.map((s: string) => `- ${s}`).join('\n')}`
+            : '';
 
-${combinedSql}
+        if (selectedFixes.length === 0) return '';
+
+        return `CONTEXT:
+The user is fixing database integrity issues identified by an automated audit. 
+The goal is to apply the following SQL migrations and update application code to align with the new schema.
+
+INSTRUCTIONS FOR AI ASSISTANT:
+1. Review the provided SQL migrations and Application Instructions below.
+2. Guide the user through applying these changes step-by-step.
+3. If the user asks "How do I do this?", provide specific code snippets based on the Application Instructions.
+4. EXPLAIN "WHY" based on the reasoning provided.
+
+SQL MIGRATIONS:
+${combinedSql}${appInstructions}
 
 Confirm when these migrations have been applied.`;
+    })();
 
-        navigator.clipboard.writeText(instruction);
-        alert('Copied instruction prompt to clipboard! Paste this to your AI assistant.');
+    const copyInstruction = () => {
+        navigator.clipboard.writeText(generatedInstruction);
+        // Optional: Show toast
     };
 
     return (
@@ -69,6 +87,13 @@ Confirm when these migrations have been applied.`;
                     <div className="flex-1" />
                     <span className="text-xs text-gray-500">{selectedIndices.length} selected</span>
                     <button
+                        onClick={() => setShowPreview(!showPreview)}
+                        disabled={selectedIndices.length === 0}
+                        className="flex items-center gap-2 px-4 py-2 bg-white/10 hover:bg-white/20 text-white text-sm font-semibold rounded-lg transition-all border border-white/10"
+                    >
+                        {showPreview ? 'Hide Preview' : 'Preview Prompt'}
+                    </button>
+                    <button
                         onClick={copyInstruction}
                         disabled={selectedIndices.length === 0}
                         className="flex items-center gap-2 px-4 py-2 bg-purple-600 hover:bg-purple-500 disabled:opacity-50 disabled:cursor-not-allowed text-white text-sm font-semibold rounded-lg transition-all shadow-lg shadow-purple-900/20"
@@ -78,20 +103,34 @@ Confirm when these migrations have been applied.`;
                     </button>
                 </div>
 
+                {showPreview && selectedIndices.length > 0 && (
+                    <div className="mb-6 bg-black/40 border border-purple-500/30 rounded-xl overflow-hidden animate-in fade-in slide-in-from-top-4">
+                        <div className="p-3 bg-purple-500/10 border-b border-purple-500/10 flex justify-between items-center">
+                            <span className="text-xs font-bold text-purple-300">PROMPT PREVIEW (Copy this to your AI)</span>
+                            <button onClick={copyInstruction} className="text-xs text-purple-400 hover:text-purple-200 flex items-center gap-1">
+                                <Share2 className="w-3 h-3" /> Copy
+                            </button>
+                        </div>
+                        <pre className="p-4 text-xs font-mono text-gray-300 whitespace-pre-wrap max-h-60 overflow-y-auto">
+                            {generatedInstruction}
+                        </pre>
+                    </div>
+                )}
+
                 <div className="space-y-4">
                     {migrations.map((fix: any, idx: number) => (
                         <div
                             key={idx}
                             onClick={() => toggleSelect(idx)}
                             className={`relative border rounded-xl p-4 transition-all cursor-pointer group ${selectedIndices.includes(idx)
-                                ? 'bg-teal-500/10 border-teal-500/50'
-                                : 'bg-black/20 border-white/10 hover:border-white/20'
+                                    ? 'bg-teal-500/10 border-teal-500/50'
+                                    : 'bg-black/20 border-white/10 hover:border-white/20'
                                 }`}
                         >
                             <div className="absolute top-4 right-4">
                                 <div className={`w-5 h-5 rounded-full border flex items-center justify-center transition-colors ${selectedIndices.includes(idx)
-                                    ? 'bg-teal-500 border-teal-500'
-                                    : 'border-gray-600 group-hover:border-gray-400'
+                                        ? 'bg-teal-500 border-teal-500'
+                                        : 'border-gray-600 group-hover:border-gray-400'
                                     }`}>
                                     {selectedIndices.includes(idx) && <CheckCircle2 className="w-3.5 h-3.5 text-black" />}
                                 </div>
@@ -103,8 +142,8 @@ Confirm when these migrations have been applied.`;
                                         {fix.description}
                                     </h4>
                                     <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${fix.safetyRating === 'SAFE' ? 'bg-green-500/20 text-green-400' :
-                                        fix.safetyRating === 'RISKY' ? 'bg-orange-500/20 text-orange-400' :
-                                            'bg-red-500/20 text-red-400'
+                                            fix.safetyRating === 'RISKY' ? 'bg-orange-500/20 text-orange-400' :
+                                                'bg-red-500/20 text-red-400'
                                         }`}>
                                         {fix.safetyRating}
                                     </span>
