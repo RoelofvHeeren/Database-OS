@@ -114,9 +114,12 @@ function NewAuditContent() {
                         <div className="flex items-start gap-3">
                             <AlertTriangle className="w-5 h-5 text-orange-400 shrink-0 mt-0.5" />
                             <div>
-                                <h4 className="text-sm font-semibold text-orange-300 mb-1">Cost Warning</h4>
-                                <p className="text-xs text-orange-200/80 leading-relaxed">
-                                    Deep analysis runs ~10 queries per table. Large tables ({'>'}100k rows) will be automatically sampled.
+                                <h4 className="text-sm font-semibold text-orange-300 mb-1">Cost & Performance</h4>
+                                <p className="text-xs text-orange-200/80 leading-relaxed mb-2">
+                                    Audits run ~10 analytical queries per table to detect integrity issues. Large tables ({'>'}100k rows) are automatically sampled to limit cost.
+                                </p>
+                                <p className="text-xs text-orange-200/60 leading-relaxed">
+                                    <strong>Estimated cost:</strong> $0.01-0.10 for typical databases (10-50 tables). Uses OpenAI GPT-4o for AI analysis (~$0.005 per 1K tokens).
                                 </p>
                             </div>
                         </div>
