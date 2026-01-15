@@ -109,7 +109,7 @@ Confirm when these migrations have been applied.`;
                                         {fix.safetyRating}
                                     </span>
                                 </div>
-                                <p className="text-sm text-gray-500 mb-3">{fix.reasoning}</p>
+                                <p className="text-sm text-gray-400 mb-3">{fix.reasoning}</p>
                                 <pre className="bg-black/50 p-3 rounded-lg text-xs font-mono text-gray-400 overflow-x-auto border border-white/5">
                                     {fix.sql}
                                 </pre>
@@ -117,6 +117,23 @@ Confirm when these migrations have been applied.`;
                         </div>
                     ))}
                 </div>
+
+                {auditResult?.fixPackJson?.appCodeChanges?.length > 0 && (
+                    <div className="bg-black/20 border border-white/10 rounded-xl p-6 mt-8">
+                        <h4 className="text-lg font-bold text-white mb-4">Application Code Instructions</h4>
+                        <p className="text-sm text-gray-400 mb-4">
+                            To ensure data consistency, update your application code (backend/scripts) as follows:
+                        </p>
+                        <ul className="space-y-3">
+                            {auditResult.fixPackJson.appCodeChanges.map((instruction: string, i: number) => (
+                                <li key={i} className="flex gap-3 text-sm text-gray-300">
+                                    <span className="text-teal-400 font-bold">•</span>
+                                    <span>{instruction}</span>
+                                </li>
+                            ))}
+                        </ul>
+                    </div>
+                )}
             </div>
         </div>
     );
