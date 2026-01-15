@@ -1,43 +1,43 @@
 import { Client } from 'pg';
 import {
-    DbSnapshot,
-    TableMetadata,
-    ColumnMetadata,
-    IndexMetadata,
-    ConstraintMetadata,
-    RelationshipMetadata,
+  DbSnapshot,
+  TableMetadata,
+  ColumnMetadata,
+  IndexMetadata,
+  ConstraintMetadata,
+  RelationshipMetadata,
 } from './types';
 
 /**
  * Introspects a PostgreSQL database and returns a complete snapshot
  */
 export async function introspectDatabase(connectionString: string): Promise<DbSnapshot> {
-    const client = new Client({ connectionString });
+  const client = new Client({ connectionString });
 
-    try {
-        await client.connect();
+  try {
+    await client.connect();
 
-        // Set statement timeout for safety
-        await client.query('SET statement_timeout = 30000'); // 30 seconds
+    // Set statement timeout for safety
+    await client.query('SET statement_timeout = 30000'); // 30 seconds
 
-        const tables = await extractTables(client);
-        const relationships = await extractRelationships(client);
+    const tables = await extractTables(client);
+    const relationships = await extractRelationships(client);
 
-        return {
-            tables,
-            relationships,
-            extractedAt: new Date().toISOString(),
-        };
-    } finally {
-        await client.end();
-    }
+    return {
+      tables,
+      relationships,
+      extractedAt: new Date().toISOString(),
+    };
+  } finally {
+    await client.end();
+  }
 }
 
 /**
  * Extracts all tables with their metadata
  */
 async function extractTables(client: Client): Promise<TableMetadata[]> {
-    const tablesQuery = `
+  const tablesQuery = `
     SELECT 
       table_schema,
       table_name
@@ -47,40 +47,40 @@ async function extractTables(client: Client): Promise<TableMetadata[]> {
     ORDER BY table_schema, table_name;
   `;
 
-    const result = await client.query(tablesQuery);
-    const tables: TableMetadata[] = [];
+  const result = await client.query(tablesQuery);
+  const tables: TableMetadata[] = [];
 
-    for (const row of result.rows) {
-        const schema = row.table_schema;
-        const name = row.table_name;
+  for (const row of result.rows) {
+    const schema = row.table_schema;
+    const name = row.table_name;
 
-        const columns = await extractColumns(client, schema, name);
-        const indexes = await extractIndexes(client, schema, name);
-        const constraints = await extractConstraints(client, schema, name);
-        const rowCount = await getRowCount(client, schema, name);
+    const columns = await extractColumns(client, schema, name);
+    const indexes = await extractIndexes(client, schema, name);
+    const constraints = await extractConstraints(client, schema, name);
+    const rowCount = await getRowCount(client, schema, name);
 
-        tables.push({
-            schema,
-            name,
-            columns,
-            indexes,
-            constraints,
-            rowCount,
-        });
-    }
+    tables.push({
+      schema,
+      name,
+      columns,
+      indexes,
+      constraints,
+      rowCount,
+    });
+  }
 
-    return tables;
+  return tables;
 }
 
 /**
  * Extracts columns for a specific table
  */
 async function extractColumns(
-    client: Client,
-    schema: string,
-    tableName: string
+  client: Client,
+  schema: string,
+  tableName: string
 ): Promise<ColumnMetadata[]> {
-    const query = `
+  const query = `
     SELECT 
       c.column_name,
       c.data_type,
@@ -115,28 +115,28 @@ async function extractColumns(
     ORDER BY c.ordinal_position;
   `;
 
-    const result = await client.query(query, [schema, tableName]);
+  const result = await client.query(query, [schema, tableName]);
 
-    return result.rows.map(row => ({
-        name: row.column_name,
-        dataType: row.data_type,
-        isNullable: row.is_nullable === 'YES',
-        defaultValue: row.column_default,
-        isPrimaryKey: row.is_primary_key,
-        isUnique: row.is_unique,
-        characterMaximumLength: row.character_maximum_length,
-    }));
+  return result.rows.map(row => ({
+    name: row.column_name,
+    dataType: row.data_type,
+    isNullable: row.is_nullable === 'YES',
+    defaultValue: row.column_default,
+    isPrimaryKey: row.is_primary_key,
+    isUnique: row.is_unique,
+    characterMaximumLength: row.character_maximum_length,
+  }));
 }
 
 /**
  * Extracts indexes for a specific table
  */
 async function extractIndexes(
-    client: Client,
-    schema: string,
-    tableName: string
+  client: Client,
+  schema: string,
+  tableName: string
 ): Promise<IndexMetadata[]> {
-    const query = `
+  const query = `
     SELECT
       i.relname as index_name,
       array_agg(a.attname ORDER BY array_position(ix.indkey, a.attnum)) as columns,
@@ -152,25 +152,25 @@ async function extractIndexes(
     GROUP BY i.relname, ix.indisunique, ix.indisprimary;
   `;
 
-    const result = await client.query(query, [schema, tableName]);
+  const result = await client.query(query, [schema, tableName]);
 
-    return result.rows.map(row => ({
-        name: row.index_name,
-        columns: row.columns,
-        isUnique: row.is_unique,
-        isPrimary: row.is_primary,
-    }));
+  return result.rows.map(row => ({
+    name: row.index_name,
+    columns: row.columns,
+    isUnique: row.is_unique,
+    isPrimary: row.is_primary,
+  }));
 }
 
 /**
  * Extracts constraints for a specific table
  */
 async function extractConstraints(
-    client: Client,
-    schema: string,
-    tableName: string
+  client: Client,
+  schema: string,
+  tableName: string
 ): Promise<ConstraintMetadata[]> {
-    const query = `
+  const query = `
     SELECT
       tc.constraint_name,
       tc.constraint_type,
@@ -189,46 +189,46 @@ async function extractConstraints(
     GROUP BY tc.constraint_name, tc.constraint_type, ccu.table_name;
   `;
 
-    const result = await client.query(query, [schema, tableName]);
+  const result = await client.query(query, [schema, tableName]);
 
-    return result.rows.map(row => ({
-        name: row.constraint_name,
-        type: row.constraint_type,
-        columns: row.columns.filter(Boolean),
-        referencedTable: row.referenced_table,
-        referencedColumns: row.referenced_columns?.filter(Boolean),
-    }));
+  return result.rows.map(row => ({
+    name: row.constraint_name,
+    type: row.constraint_type,
+    columns: Array.isArray(row.columns) ? row.columns.filter(Boolean) : [],
+    referencedTable: row.referenced_table,
+    referencedColumns: Array.isArray(row.referenced_columns) ? row.referenced_columns.filter(Boolean) : [],
+  }));
 }
 
 /**
  * Gets approximate row count for a table
  */
 async function getRowCount(
-    client: Client,
-    schema: string,
-    tableName: string
+  client: Client,
+  schema: string,
+  tableName: string
 ): Promise<number | undefined> {
-    try {
-        // Use pg_class for fast approximate count
-        const query = `
+  try {
+    // Use pg_class for fast approximate count
+    const query = `
       SELECT reltuples::bigint as estimate
       FROM pg_class
       JOIN pg_namespace ON pg_namespace.oid = pg_class.relnamespace
       WHERE nspname = $1 AND relname = $2;
     `;
 
-        const result = await client.query(query, [schema, tableName]);
-        return result.rows[0]?.estimate || 0;
-    } catch {
-        return undefined;
-    }
+    const result = await client.query(query, [schema, tableName]);
+    return result.rows[0]?.estimate || 0;
+  } catch {
+    return undefined;
+  }
 }
 
 /**
  * Extracts foreign key relationships
  */
 async function extractRelationships(client: Client): Promise<RelationshipMetadata[]> {
-    const query = `
+  const query = `
     SELECT
       tc.table_schema || '.' || tc.table_name as from_table,
       kcu.column_name as from_column,
@@ -246,13 +246,13 @@ async function extractRelationships(client: Client): Promise<RelationshipMetadat
       AND tc.table_schema NOT IN ('pg_catalog', 'information_schema');
   `;
 
-    const result = await client.query(query);
+  const result = await client.query(query);
 
-    return result.rows.map(row => ({
-        fromTable: row.from_table,
-        fromColumn: row.from_column,
-        toTable: row.to_table,
-        toColumn: row.to_column,
-        constraintName: row.constraint_name,
-    }));
+  return result.rows.map(row => ({
+    fromTable: row.from_table,
+    fromColumn: row.from_column,
+    toTable: row.to_table,
+    toColumn: row.to_column,
+    constraintName: row.constraint_name,
+  }));
 }

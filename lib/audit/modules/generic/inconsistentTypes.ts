@@ -17,6 +17,8 @@ export const inconsistentTypesModule: AuditModule = {
         const idColumnTypes = new Map<string, { type: string; tables: string[] }>();
 
         for (const table of snapshot.tables) {
+            if (!Array.isArray(table.columns)) continue;
+
             const idColumn = table.columns.find(c => c.name === 'id');
             if (idColumn) {
                 const key = 'id';
@@ -34,6 +36,8 @@ export const inconsistentTypesModule: AuditModule = {
 
         // Check for FK columns with mismatched types
         for (const table of snapshot.tables) {
+            if (!Array.isArray(table.columns)) continue;
+
             for (const column of table.columns) {
                 if (column.name.endsWith('_id') && column.name !== 'id') {
                     const referencedTableName = column.name.replace(/_id$/, '');
@@ -42,7 +46,7 @@ export const inconsistentTypesModule: AuditModule = {
                             t.name.toLowerCase() === referencedTableName.toLowerCase() + 's'
                     );
 
-                    if (referencedTable) {
+                    if (referencedTable && Array.isArray(referencedTable.columns)) {
                         const referencedIdColumn = referencedTable.columns.find(c => c.name === 'id');
 
                         if (referencedIdColumn && referencedIdColumn.dataType !== column.dataType) {
@@ -70,6 +74,8 @@ export const inconsistentTypesModule: AuditModule = {
 
         // Check for dates stored as text
         for (const table of snapshot.tables) {
+            if (!Array.isArray(table.columns)) continue;
+
             for (const column of table.columns) {
                 const colLower = column.name.toLowerCase();
                 const isDateName = colLower.includes('date') || colLower.includes('time') ||
