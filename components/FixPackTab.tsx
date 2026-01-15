@@ -147,8 +147,13 @@ Confirm when these migrations have been applied.`;
                                         }`}>
                                         {fix.safetyRating}
                                     </span>
+                                    {(fix.sql.toLowerCase().includes('insert') || fix.sql.toLowerCase().includes('update')) && (
+                                        <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-blue-500/20 text-blue-400 border border-blue-500/20">
+                                            DATA MIGRATION
+                                        </span>
+                                    )}
                                 </div>
-                                <p className="text-sm text-gray-400 mb-3">{fix.reasoning}</p>
+                                <p className="text-sm text-gray-400 mb-3 leading-relaxed">{fix.reasoning}</p>
                                 <pre className="bg-black/50 p-3 rounded-lg text-xs font-mono text-gray-400 overflow-x-auto border border-white/5">
                                     {fix.sql}
                                 </pre>
