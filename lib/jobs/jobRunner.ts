@@ -26,7 +26,7 @@ export async function processNextAuditJob(): Promise<void> {
     // Wrap entire job in a timeout to prevent indefinite hangs
     const jobPromise = executeAuditJob(auditRun);
     const timeoutPromise = new Promise((_, reject) =>
-        setTimeout(() => reject(new Error('Audit job timeout after 10 minutes')), 10 * 60 * 1000)
+        setTimeout(() => reject(new Error('Audit job timeout after 5 minutes')), 5 * 60 * 1000)
     );
 
     try {
@@ -114,8 +114,10 @@ async function executeAuditJob(auditRun: any): Promise<void> {
             const aiGeneratedPlan = await generateFixPlans(issues);
 
             // [PROACTIVE] Step 5: Run Proactive Investigation (if user provided input)
+            // DISABLED: This feature is causing hangs and needs to be fixed
             let proactiveIssues = [];
             let investigationLog = null;
+            /*
             if (auditRun.userInput) {
                 await updateProgress(auditRun.id, 90, 'Investigating user-reported issue...');
                 try {
@@ -151,6 +153,7 @@ async function executeAuditJob(auditRun: any): Promise<void> {
                     await updateProgress(auditRun.id, 90, `Proactive investigation failed: ${err instanceof Error ? err.message : 'Unknown error'}`);
                 }
             }
+            */
 
             // 3. Merge plans (AI takes precedence for complex logic, but we preserve heuristic migrations)
             let fixPack = {
