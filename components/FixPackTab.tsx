@@ -25,6 +25,35 @@ export default function FixPackTab({ auditResult }: { auditResult: any }) {
 
     const [selectedIndices, setSelectedIndices] = useState<number[]>([]);
     const [showPreview, setShowPreview] = useState(false);
+    const [isApplying, setIsApplying] = useState(false);
+
+    const applyFixes = async () => {
+        if (!confirm(`Are you sure you want to apply ${selectedIndices.length} schema changes to the PRODUCTION database? This cannot be undone.`)) {
+            return;
+        }
+
+        setIsApplying(true);
+        try {
+            const res = await fetch(`/api/audits/${auditResult.auditId}/fix`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ migrationIndices: selectedIndices })
+            });
+
+            const data = await res.json();
+
+            if (!res.ok) throw new Error(data.error || 'Failed to apply fixes');
+
+            alert('Fixes applied successfully! Starting verification audit...');
+            // Reload to show verification progress? Or just notify?
+            // Ideally redirect or trigger a refresh context
+            window.location.reload(); // Simple refresh to pick up new state if possible
+        } catch (error: any) {
+            alert(`Error applying fixes: ${error.message}`);
+        } finally {
+            setIsApplying(false);
+        }
+    };
 
     // Select All / Deselect All
     const toggleSelectAll = () => {
@@ -135,7 +164,24 @@ Confirm when these migrations have been applied.`;
                         className="flex items-center gap-2 px-4 py-2 bg-purple-600 hover:bg-purple-500 disabled:opacity-50 disabled:cursor-not-allowed text-white text-sm font-semibold rounded-lg transition-all shadow-lg shadow-purple-900/20"
                     >
                         <Share2 className="w-4 h-4" />
-                        Copy Instruction Prompt
+                        Copy Instruction
+                    </button>
+                    <button
+                        onClick={applyFixes}
+                        disabled={selectedIndices.length === 0 || isApplying}
+                        className="flex items-center gap-2 px-4 py-2 bg-teal-600 hover:bg-teal-500 disabled:opacity-50 disabled:cursor-not-allowed text-white text-sm font-semibold rounded-lg transition-all shadow-lg shadow-teal-900/20"
+                    >
+                        {isApplying ? (
+                            <>
+                                <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                                Applying...
+                            </>
+                        ) : (
+                            <>
+                                <CheckCircle2 className="w-4 h-4" />
+                                Apply Selected Fixes
+                            </>
+                        )}
                     </button>
                 </div>
 
