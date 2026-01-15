@@ -38,13 +38,13 @@ export async function POST(
 
         // Step 0: Analyze Problem (Breakdown into hypotheses)
         if (step === 'analyze') {
-            const result = await analyzeProblemStatement(hypothesis, snapshot, model);
+            const result = await analyzeProblemStatement(hypothesis, model, snapshot);
             return NextResponse.json(result);
         }
 
         // Step 1: Generate SQL from Hypothesis
         if (step === 'generate') {
-            const result = await generateVerificationQuery(hypothesis, snapshot, model);
+            const result = await generateVerificationQuery(hypothesis, model, snapshot);
             return NextResponse.json(result);
         }
 
