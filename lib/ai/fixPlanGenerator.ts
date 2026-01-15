@@ -46,6 +46,14 @@ CRITICAL REQUIREMENT 2: RESOLVING DIVERGENCE & AMBIGUITY
 - Strategy 3: Create a "Link Table" if it's actually Many-to-Many.
 - PROVIDE A MIGRATION TO FIX THIS. Do not just ignore it.
 
+CRITICAL REQUIREMENT 3: TYPE CONSISTENCY (UUID vs INT)
+- ALWAYS match the existing column types for Foreign Keys. 
+- If the database uses UUIDs, DO NOT use INT for link tables or new IDs.
+- Pay close attention to the provided issue summary for clues about existing types.
+
+CRITICAL REQUIREMENT 4: NAMING CONVENTIONS
+- For Link Tables, use the suffix "_link" unless the issue summary suggests a different project-specific convention.
+
 Refine the input plan into 4 categories:
 1. migrations: Array of SQL statements to fix the schema (DDL) AND move data (DML). 
    - Each item has: { sql: string, description: string, reasoning: string, safetyRating: 'SAFE'|'RISKY'|'DANGEROUS' }.

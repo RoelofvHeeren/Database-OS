@@ -1,6 +1,3 @@
-// This is your Prisma schema file,
-// learn more about it in the docs: https://pris.ly/d/prisma-schema
-
 generator client {
   provider = "prisma-client-js"
 }
@@ -11,34 +8,31 @@ datasource db {
 }
 
 model Connection {
-  id                String      @id @default(cuid())
-  name              String
-  encryptedUrl      String      @map("encrypted_url")
-  createdAt         DateTime    @default(now()) @map("created_at")
-  updatedAt         DateTime    @updatedAt @map("updated_at")
-  auditRuns         AuditRun[]
+  id           String     @id @default(cuid())
+  name         String
+  encryptedUrl String     @map("encrypted_url")
+  createdAt    DateTime   @default(now()) @map("created_at")
+  updatedAt    DateTime   @updatedAt @map("updated_at")
+  auditRuns    AuditRun[]
 
   @@map("connections")
 }
 
 model AuditRun {
-  id            String       @id @default(cuid())
-  connectionId  String       @map("connection_id")
-  connection    Connection   @relation(fields: [connectionId], references: [id], onDelete: Cascade)
-  status        AuditStatus  @default(QUEUED)
-  progress      Int          @default(0)
-  logsJson      Json         @default("[]") @map("logs_json")
-  startedAt     DateTime?    @map("started_at")
-  completedAt   DateTime?    @map("completed_at")
-  createdAt     DateTime     @default(now()) @map("created_at")
-  userInput     String?      @map("user_input")
-  
-  // Self-relation for Re-verification chains
-  parentRunId   String?      @map("parent_run_id")
-  parentRun     AuditRun?    @relation("AuditChain", fields: [parentRunId], references: [id])
-  childRuns     AuditRun[]   @relation("AuditChain")
-
-  auditResult   AuditResult?
+  id           String       @id @default(cuid())
+  connectionId String       @map("connection_id")
+  status       AuditStatus  @default(QUEUED)
+  progress     Int          @default(0)
+  logsJson     Json         @default("[]") @map("logs_json")
+  startedAt    DateTime?    @map("started_at")
+  completedAt  DateTime?    @map("completed_at")
+  createdAt    DateTime     @default(now()) @map("created_at")
+  userInput    String?      @map("user_input")
+  parentRunId  String?      @map("parent_run_id")
+  auditResult  AuditResult?
+  connection   Connection   @relation(fields: [connectionId], references: [id], onDelete: Cascade)
+  parentRun    AuditRun?    @relation("AuditChain", fields: [parentRunId], references: [id])
+  childRuns    AuditRun[]   @relation("AuditChain")
 
   @@index([connectionId])
   @@index([status])
@@ -46,15 +40,15 @@ model AuditRun {
 }
 
 model AuditResult {
-  id            String   @id @default(cuid())
-  auditRunId    String   @unique @map("audit_run_id")
-  auditRun      AuditRun @relation(fields: [auditRunId], references: [id], onDelete: Cascade)
-  snapshotJson  Json     @map("snapshot_json")
-  modelJson     Json     @map("model_json")
-  issuesJson    Json     @map("issues_json")
-  fixPackJson   Json     @map("fix_pack_json")
-  investigationJson Json? @map("investigation_json")
-  createdAt     DateTime @default(now()) @map("created_at")
+  id                String   @id @default(cuid())
+  auditRunId        String   @unique @map("audit_run_id")
+  snapshotJson      Json     @map("snapshot_json")
+  modelJson         Json     @map("model_json")
+  issuesJson        Json     @map("issues_json")
+  fixPackJson       Json     @map("fix_pack_json")
+  createdAt         DateTime @default(now()) @map("created_at")
+  investigationJson Json?    @map("investigation_json")
+  auditRun          AuditRun @relation(fields: [auditRunId], references: [id], onDelete: Cascade)
 
   @@map("audit_results")
 }
