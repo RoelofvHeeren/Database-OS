@@ -5,7 +5,7 @@ import { introspectDatabase } from '../introspection/inspector';
 import { DbSnapshot } from '../introspection/types';
 import { inferModel } from '../modeling/inferrer';
 import { runAudit } from '../audit/engine/runAudit';
-import { DEFAULT_BUDGET } from '../audit/engine/types';
+import { DEFAULT_BUDGET, FixPlan } from '../audit/engine/types';
 import { updateProgress } from './progressTracker';
 import { generateFixPlans } from '../ai/fixPlanGenerator';
 
@@ -162,7 +162,7 @@ async function executeAuditJob(auditRun: any): Promise<void> {
             let investigationLog = null;
 
             // 3. Merge plans (AI takes precedence for complex logic, but we preserve heuristic migrations)
-            let fixPack = {
+            let fixPack: FixPlan = {
                 migrations: [
                     ...heuristicMigrations,
                     ...aiGeneratedPlan.migrations
@@ -170,6 +170,7 @@ async function executeAuditJob(auditRun: any): Promise<void> {
                 backfills: aiGeneratedPlan.backfills,
                 verificationQueries: aiGeneratedPlan.verificationQueries,
                 appCodeChanges: aiGeneratedPlan.appCodeChanges,
+                resolvedAppCodeChanges: [],
                 canonicalRule: aiGeneratedPlan.canonicalRule
             };
 
