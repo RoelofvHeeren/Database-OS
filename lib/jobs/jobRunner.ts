@@ -6,6 +6,7 @@ import { DbSnapshot } from '../introspection/types';
 import { inferModel } from '../modeling/inferrer';
 import { runAudit } from '../audit/engine/runAudit';
 import { updateProgress } from './progressTracker';
+import { generateFixPlans } from '../ai/fixPlanGenerator';
 
 /**
  * Processes the next queued audit job
@@ -74,15 +75,28 @@ export async function processNextAuditJob(): Promise<void> {
 
             await updateProgress(auditRun.id, 80, `Found ${issues.length} issues`);
 
-            // Step 4: Generate fix plans (will be implemented with AI)
-            await updateProgress(auditRun.id, 85, 'Generating fix plans...');
+            // Step 4: Generate fix plans (AI-powered + Heuristic Aggregation)
+            await updateProgress(auditRun.id, 85, 'Generating AI fix plans...');
 
-            // For now, just store results without AI-generated fix plans
+            // 1. Get heuristic fixes from issues
+            const heuristicMigrations = issues
+                .filter(i => i.fixPlan && i.fixPlan.migrations.length > 0)
+                .flatMap(i => i.fixPlan!.migrations);
+
+            // 2. Generate deep analysis fixes with AI
+            // We pass the issues to the AI to find complex patterns and comprehensive fixes
+            const aiGeneratedPlan = await generateFixPlans(issues);
+
+            // 3. Merge plans (AI takes precedence for complex logic, but we preserve heuristic migrations)
             const fixPack = {
-                migrations: [],
-                backfills: [],
-                verificationQueries: [],
-                appCodeChanges: [],
+                migrations: [
+                    ...heuristicMigrations,
+                    ...aiGeneratedPlan.migrations // AI migrations often cover broader scope
+                ],
+                backfills: aiGeneratedPlan.backfills,
+                verificationQueries: aiGeneratedPlan.verificationQueries,
+                appCodeChanges: aiGeneratedPlan.appCodeChanges,
+                canonicalRule: aiGeneratedPlan.canonicalRule
             };
 
             await updateProgress(auditRun.id, 95, 'Saving results...');

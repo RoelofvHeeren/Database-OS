@@ -125,13 +125,21 @@ function inferIdentityKeys(snapshot: DbSnapshot): IdentityKey[] {
             }
             // Domain detection
             else if (columnLower.includes('domain')) {
-                keyType = 'domain';
-                confidence = 0.85;
+                // Heuristic: Only treat domains as identity keys if unique or PK
+                // Otherwise, they are likely just attributes (e.g. company_domain on a contact)
+                if (column.isUnique || column.isPrimaryKey) {
+                    keyType = 'domain';
+                    confidence = 0.85;
+                }
             }
             // Phone detection
             else if (columnLower.includes('phone') || columnLower.includes('mobile')) {
-                keyType = 'phone';
-                confidence = 0.8;
+                // Heuristic: Only treat phones as identity keys if unique or PK
+                // Otherwise, duplicate phone numbers are allowed (e.g. shared business lines)
+                if (column.isUnique || column.isPrimaryKey) {
+                    keyType = 'phone';
+                    confidence = 0.8;
+                }
             }
             // External ID detection
             else if (columnLower.includes('external_id') || columnLower.includes('external_key')) {
