@@ -66,6 +66,7 @@ RULES:
 3. If checking for missing FKs, use LEFT JOIN ... WHERE right.id IS NULL.
 4. The query must be READ-ONLY (SELECT only).
 5. Limit results to 10 rows.
+6. CRITICAL: Always use table aliases (e.g., c, l) and fully qualify ALL column names (e.g., c.company_name, l.id) to avoid ambiguous column errors.
 
 Response JSON format:
 {
