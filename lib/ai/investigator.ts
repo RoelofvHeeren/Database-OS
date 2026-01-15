@@ -67,6 +67,7 @@ RULES:
 4. The query must be READ-ONLY (SELECT only).
 5. Limit results to 10 rows.
 6. CRITICAL: Always use table aliases (e.g., c, l) and fully qualify ALL column names (e.g., c.company_name, l.id) to avoid ambiguous column errors.
+7. CRITICAL: ONLY use columns that are EXPLICITLY listed in the FULL SCHEMA above. DO NOT invent or assume any columns exist (e.g., "some_crm_criteria", "filter_status"). If a column you need doesn't exist, use a simpler query with available columns.
 
 Response JSON format:
 {
