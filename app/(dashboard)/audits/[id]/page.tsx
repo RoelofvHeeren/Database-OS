@@ -17,6 +17,8 @@ import {
 } from 'lucide-react';
 import { notFound } from 'next/navigation';
 import FixPackTab from '@/components/FixPackTab';
+import EntityMapTab from '@/components/EntityMapTab';
+import DivergenceTab from '@/components/DivergenceTab';
 
 export default function AuditReportPage(props: { params: Promise<{ id: string }> }) {
     const params = use(props.params);
@@ -81,9 +83,12 @@ export default function AuditReportPage(props: { params: Promise<{ id: string }>
                 </div>
 
                 <div className="flex gap-3">
-                    <button className="flex items-center gap-2 px-4 py-2 bg-black/20 hover:bg-white/5 text-gray-300 rounded-lg transition-colors border border-white/10">
-                        <Share2 className="w-4 h-4" />
-                        Share
+                    <button
+                        onClick={() => router.push(`/audits/new?connectionId=${data.connectionId}`)}
+                        className="flex items-center gap-2 px-4 py-2 bg-white/10 hover:bg-white/20 text-white rounded-lg transition-colors border border-white/10"
+                    >
+                        <ShieldCheck className="w-4 h-4" />
+                        Re-verify (Run New Audit)
                     </button>
                     <button className="flex items-center gap-2 px-4 py-2 bg-[#139187]/20 hover:bg-[#139187]/30 text-[#139187] rounded-lg transition-colors border border-[#139187]/30">
                         <Download className="w-4 h-4" />
@@ -295,14 +300,14 @@ export default function AuditReportPage(props: { params: Promise<{ id: string }>
                     <InvestigatorTab auditId={id} />
                 )}
 
-                {/* Placeholder for other tabs - MVP Implementation */}
-                {['entity-map', 'divergence'].includes(activeTab) && (
-                    <div className="flex flex-col items-center justify-center py-20 bg-white/5 border border-white/10 rounded-2xl border-dashed">
-                        <Wrench className="w-12 h-12 text-gray-600 mb-4" />
-                        <h3 className="text-xl font-bold text-white mb-2">Under Construction</h3>
-                        <p className="text-gray-400 mb-6">This section is being built for the full release.</p>
-                        <p className="text-xs text-gray-600 font-mono">Tab: {activeTab}</p>
-                    </div>
+                {/* ENTITY MAP TAB */}
+                {activeTab === 'entity-map' && (
+                    <EntityMapTab model={model} />
+                )}
+
+                {/* DIVERGENCE TAB */}
+                {activeTab === 'divergence' && (
+                    <DivergenceTab auditResult={auditResult} />
                 )}
             </div>
         </div>
