@@ -5,7 +5,7 @@ import { processNextAuditJob } from '@/lib/jobs/jobRunner';
 export async function POST(request: NextRequest) {
     try {
         const body = await request.json();
-        const { connectionId } = body;
+        const { connectionId, userInput } = body;
 
         if (!connectionId) {
             return NextResponse.json(
@@ -33,6 +33,7 @@ export async function POST(request: NextRequest) {
                 status: 'QUEUED',
                 progress: 0,
                 logsJson: [],
+                userInput: userInput || null,
             },
         });
 

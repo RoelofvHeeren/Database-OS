@@ -87,11 +87,37 @@ export async function processNextAuditJob(): Promise<void> {
             // We pass the issues to the AI to find complex patterns and comprehensive fixes
             const aiGeneratedPlan = await generateFixPlans(issues);
 
+            // [PROACTIVE] Step 5: Run Proactive Investigation (if user provided input)
+            let proactiveIssues = [];
+            let investigationLog = null;
+            if (auditRun.userInput) {
+                await updateProgress(auditRun.id, 90, 'Investigating user-reported issue...');
+                try {
+                    const { runProactiveInvestigation } = await import('../ai/proactiveInvestigator');
+                    const investigationResult = await runProactiveInvestigation(
+                        auditRun.userInput,
+                        normalizedSnapshot as any,
+                        model, // Pass inferred model
+                        client // Pass DB client
+                    );
+
+                    proactiveIssues = investigationResult.issues;
+                    investigationLog = investigationResult.log;
+
+                    // Merge proactive fixes into the plan
+                    if (investigationResult.fixPlan) {
+                        aiGeneratedPlan.migrations.push(...investigationResult.fixPlan.migrations);
+                    }
+                } catch (err) {
+                    console.error('Proactive investigation failed', err);
+                }
+            }
+
             // 3. Merge plans (AI takes precedence for complex logic, but we preserve heuristic migrations)
             const fixPack = {
                 migrations: [
                     ...heuristicMigrations,
-                    ...aiGeneratedPlan.migrations // AI migrations often cover broader scope
+                    ...aiGeneratedPlan.migrations
                 ],
                 backfills: aiGeneratedPlan.backfills,
                 verificationQueries: aiGeneratedPlan.verificationQueries,
@@ -109,6 +135,7 @@ export async function processNextAuditJob(): Promise<void> {
                     modelJson: model as any,
                     issuesJson: issues as any,
                     fixPackJson: fixPack as any,
+                    investigationJson: investigationLog as any,
                 },
             });
 

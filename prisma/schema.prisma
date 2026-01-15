@@ -31,6 +31,7 @@ model AuditRun {
   startedAt     DateTime?    @map("started_at")
   completedAt   DateTime?    @map("completed_at")
   createdAt     DateTime     @default(now()) @map("created_at")
+  userInput     String?      @map("user_input")
   auditResult   AuditResult?
 
   @@index([connectionId])
@@ -46,6 +47,7 @@ model AuditResult {
   modelJson     Json     @map("model_json")
   issuesJson    Json     @map("issues_json")
   fixPackJson   Json     @map("fix_pack_json")
+  investigationJson Json? @map("investigation_json")
   createdAt     DateTime @default(now()) @map("created_at")
 
   @@map("audit_results")

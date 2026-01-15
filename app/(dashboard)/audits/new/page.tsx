@@ -26,6 +26,7 @@ function NewAuditContent() {
     const [selectedId, setSelectedId] = useState(initialConnectionId);
     const [isLoading, setIsLoading] = useState(true);
     const [isStarting, setIsStarting] = useState(false);
+    const [userInput, setUserInput] = useState('');
 
     useEffect(() => {
         fetch('/api/connections')
@@ -44,7 +45,7 @@ function NewAuditContent() {
             const res = await fetch('/api/audits', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ connectionId: selectedId }),
+                body: JSON.stringify({ connectionId: selectedId, userInput }),
             });
 
             const data = await res.json();
@@ -180,7 +181,22 @@ function NewAuditContent() {
                             </div>
                         )}
 
-                        <div className="mt-8 pt-6 border-t border-white/10 flex justify-end">
+                        <div className="mt-6 pt-6 border-t border-white/10">
+                            <label className="block text-sm font-semibold text-white mb-2">
+                                Describe a problem (Optional)
+                            </label>
+                            <p className="text-xs text-gray-400 mb-3">
+                                If you're seeing a specific issue, tell the AI about it. We'll add custom investigation steps to the audit.
+                            </p>
+                            <textarea
+                                value={userInput}
+                                onChange={(e) => setUserInput(e.target.value)}
+                                placeholder="e.g. My calendar events aren't syncing with the tasks table..."
+                                className="w-full h-24 bg-black/40 border border-white/10 rounded-xl p-4 text-white placeholder:text-gray-600 focus:outline-none focus:border-teal-500/50 transition-colors resize-none text-sm"
+                            />
+                        </div>
+
+                        <div className="mt-6 flex justify-end">
                             <button
                                 onClick={handleStartAudit}
                                 disabled={!selectedId || isStarting}
@@ -201,8 +217,8 @@ function NewAuditContent() {
                         </div>
                     </div>
                 </div>
-            </div>
-        </div>
+            </div >
+        </div >
     );
 }
 
