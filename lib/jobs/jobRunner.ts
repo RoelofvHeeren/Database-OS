@@ -114,11 +114,11 @@ async function executeAuditJob(auditRun: any): Promise<void> {
             const aiGeneratedPlan = await generateFixPlans(issues);
 
             // [PROACTIVE] Step 5: Run Proactive Investigation (if user provided input)
-            // DISABLED: This feature is causing hangs and needs to be fixed
+            // DISABLED for verification audits to prevent hangs
             let proactiveIssues = [];
             let investigationLog = null;
-            /*
-            if (auditRun.userInput) {
+
+            if (auditRun.userInput && !auditRun.parentRunId) {
                 await updateProgress(auditRun.id, 90, 'Investigating user-reported issue...');
                 try {
                     const { runProactiveInvestigation } = await import('../ai/proactiveInvestigator');
@@ -153,7 +153,6 @@ async function executeAuditJob(auditRun: any): Promise<void> {
                     await updateProgress(auditRun.id, 90, `Proactive investigation failed: ${err instanceof Error ? err.message : 'Unknown error'}`);
                 }
             }
-            */
 
             // 3. Merge plans (AI takes precedence for complex logic, but we preserve heuristic migrations)
             let fixPack = {
