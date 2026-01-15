@@ -5,6 +5,7 @@ import { introspectDatabase } from '../introspection/inspector';
 import { DbSnapshot } from '../introspection/types';
 import { inferModel } from '../modeling/inferrer';
 import { runAudit } from '../audit/engine/runAudit';
+import { DEFAULT_BUDGET } from '../audit/engine/types';
 import { updateProgress } from './progressTracker';
 import { generateFixPlans } from '../ai/fixPlanGenerator';
 
@@ -106,9 +107,22 @@ async function executeAuditJob(auditRun: any): Promise<void> {
             console.log('[Job] Starting audit modules');
 
             // Wrap runAudit in its own timeout since it's where hangs occur
-            const auditPromise = runAudit(normalizedSnapshot as any, model, client);
+            // Increased to 10 minutes because we now have progress reporting
+            const auditPromise = runAudit(
+                normalizedSnapshot as any,
+                model,
+                client,
+                DEFAULT_BUDGET,
+                async (completed, total, currentModule) => {
+                    // Map audit progress (0-100%) to job progress (55-80%)
+                    const progress = 55 + Math.floor((completed / total) * 25);
+                    await updateProgress(auditRun.id, progress, `Running audit module: ${currentModule} (${completed + 1}/${total})`);
+                    console.log(`[Job] Finished module ${completed + 1}/${total}: ${currentModule}`);
+                }
+            );
+
             const auditTimeout = new Promise((_, reject) =>
-                setTimeout(() => reject(new Error('Audit modules timeout after 3 minutes')), 3 * 60 * 1000)
+                setTimeout(() => reject(new Error('Audit modules timeout after 10 minutes')), 10 * 60 * 1000)
             );
 
             const issues = await Promise.race([auditPromise, auditTimeout]) as any[];

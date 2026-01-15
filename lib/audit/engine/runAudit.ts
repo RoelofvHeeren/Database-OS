@@ -12,7 +12,8 @@ export async function runAudit(
     snapshot: DbSnapshot,
     model: InferredModel,
     client: Client,
-    config: BudgetConfig = DEFAULT_BUDGET
+    config: BudgetConfig = DEFAULT_BUDGET,
+    onProgress?: (completed: number, total: number, currentModule: string) => Promise<void>
 ): Promise<AuditIssue[]> {
     const modules = getAuditModules();
     const allIssues: AuditIssue[] = [];
@@ -20,8 +21,13 @@ export async function runAudit(
     // Set statement timeout
     await client.query(`SET statement_timeout = ${config.statementTimeoutMs}`);
 
-    for (const module of modules) {
+    for (let i = 0; i < modules.length; i++) {
+        const module = modules[i];
         try {
+            if (onProgress) {
+                await onProgress(i, modules.length, module.name);
+            }
+
             const budgetTracker = createBudgetTracker(config);
 
             const context: AuditContext = {
