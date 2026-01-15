@@ -127,7 +127,7 @@ export async function processNextAuditJob(): Promise<void> {
             }
 
             // 3. Merge plans (AI takes precedence for complex logic, but we preserve heuristic migrations)
-            const fixPack = {
+            let fixPack = {
                 migrations: [
                     ...heuristicMigrations,
                     ...aiGeneratedPlan.migrations
@@ -137,6 +137,67 @@ export async function processNextAuditJob(): Promise<void> {
                 appCodeChanges: aiGeneratedPlan.appCodeChanges,
                 canonicalRule: aiGeneratedPlan.canonicalRule
             };
+
+            // [VERIFICATION] If this is a verification run, compare with baseline
+            if (auditRun.parentRunId) {
+                await updateProgress(auditRun.id, 92, 'Comparing with baseline audit...');
+                try {
+                    const { compareAuditResults } = await import('../audit/engine/verificationComparer');
+
+                    // Load baseline audit
+                    const baselineRun = await prisma.auditRun.findUnique({
+                        where: { id: auditRun.parentRunId },
+                        include: { auditResult: true }
+                    });
+
+                    if (baselineRun?.auditResult) {
+                        const baselineIssues = baselineRun.auditResult.issuesJson as any[];
+                        const comparison = compareAuditResults(baselineIssues, issues);
+
+                        // Mark migrations based on resolution status
+                        const resolvedIssueIds = new Set(comparison.resolved.map(i => i.id));
+                        const newIssueIds = new Set(comparison.new.map(i => i.id));
+
+                        fixPack.migrations = fixPack.migrations.map(migration => {
+                            // Try to match migration to an issue
+                            const matchesResolvedIssue = resolvedIssueIds.size > 0 &&
+                                comparison.resolved.some(issue =>
+                                    migration.description.includes(issue.title) ||
+                                    (issue.evidence?.affectedTables || []).some(table =>
+                                        migration.sql.toLowerCase().includes(table.toLowerCase())
+                                    )
+                                );
+
+                            const matchesNewIssue = newIssueIds.size > 0 &&
+                                comparison.new.some(issue =>
+                                    migration.description.includes(issue.title) ||
+                                    (issue.evidence?.affectedTables || []).some(table =>
+                                        migration.sql.toLowerCase().includes(table.toLowerCase())
+                                    )
+                                );
+
+                            if (matchesResolvedIssue) {
+                                return { ...migration, status: 'RESOLVED' as const, resolvedAt: new Date() };
+                            } else if (matchesNewIssue) {
+                                return { ...migration, status: 'NEW' as const };
+                            } else {
+                                return { ...migration, status: 'PENDING' as const };
+                            }
+                        });
+
+                        // Filter out resolved migrations from the SQL output
+                        fixPack.migrations = fixPack.migrations.filter(m => m.status !== 'RESOLVED');
+
+                        await updateProgress(
+                            auditRun.id,
+                            93,
+                            `Verification complete: ${comparison.resolved.length} resolved, ${comparison.remaining.length} remaining, ${comparison.new.length} new (${comparison.progressPercent}% progress)`
+                        );
+                    }
+                } catch (err) {
+                    console.error('[Verification Comparison] Failed:', err);
+                }
+            }
 
             await updateProgress(auditRun.id, 95, 'Saving results...');
 

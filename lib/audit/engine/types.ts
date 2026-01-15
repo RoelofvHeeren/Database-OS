@@ -74,6 +74,8 @@ export interface SqlFix {
     sql: string;
     safetyRating: FixSafetyRating;
     reasoning: string;
+    status?: 'PENDING' | 'RESOLVED' | 'NEW';
+    resolvedAt?: Date;
 }
 
 export type FixSafetyRating = 'SAFE' | 'RISKY' | 'DESTRUCTIVE';

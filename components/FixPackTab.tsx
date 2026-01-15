@@ -3,6 +3,13 @@ import { CheckCircle2, Share2, Download } from 'lucide-react';
 
 export default function FixPackTab({ auditResult }: { auditResult: any }) {
     const migrations = auditResult?.fixPackJson?.migrations || [];
+
+    // Calculate progress stats
+    const resolvedCount = migrations.filter((m: any) => m.status === 'RESOLVED').length;
+    const newCount = migrations.filter((m: any) => m.status === 'NEW').length;
+    const pendingCount = migrations.filter((m: any) => !m.status || m.status === 'PENDING').length;
+    const hasStatusInfo = migrations.some((m: any) => m.status);
+
     // If no fixes, show empty state
     if (migrations.length === 0) {
         return (
@@ -54,12 +61,14 @@ PRE-FLIGHT CHECK (CRITICAL):
 1. Environment Mismatch: The audit may have run on a different DB (Dev) than the target (Prod).
 2. Check Table Existence: Before running any "ALTER TABLE" commands below, verify the table exists.
 3. If a table (e.g. 'companies') is missing entirely, YOU MUST CREATE IT FIRST. Do not try to ALTER a non-existent table.
+4. Check Data Types (UUID vs INT): Ensure that any new ID columns match the project's existing type. If the project uses UUIDs for IDs, use UUID (not INT) for link tables.
 
 INSTRUCTIONS FOR AI ASSISTANT:
 1. Review the provided SQL migrations and Application Instructions below.
 2. Guide the user through applying these changes step-by-step.
 3. If the user asks "How do I do this?", provide specific code snippets based on the Application Instructions.
 4. EXPLAIN "WHY" based on the reasoning provided.
+5. NAMING CONVENTION: For proposed link tables (e.g., '_link'), use the suffix specified in the SQL below unless the project prefers '_link_table'. Both are acceptable, but consistency is key.
 
 SQL MIGRATIONS:
 ${combinedSql}${appInstructions}
@@ -79,6 +88,28 @@ Confirm when these migrations have been applied.`;
                     <div>
                         <h3 className="text-xl font-bold text-white mb-2 font-serif">Proposed Fixes</h3>
                         <p className="text-gray-400 text-sm">Review recommendations and generate an instruction prompt.</p>
+                        {hasStatusInfo && (
+                            <div className="mt-3 flex items-center gap-3 text-sm">
+                                {resolvedCount > 0 && (
+                                    <span className="flex items-center gap-1.5 text-green-400">
+                                        <CheckCircle2 className="w-4 h-4" />
+                                        {resolvedCount} Resolved
+                                    </span>
+                                )}
+                                {pendingCount > 0 && (
+                                    <span className="flex items-center gap-1.5 text-orange-400">
+                                        <span className="w-4 h-4 flex items-center justify-center">🔄</span>
+                                        {pendingCount} Pending
+                                    </span>
+                                )}
+                                {newCount > 0 && (
+                                    <span className="flex items-center gap-1.5 text-blue-400">
+                                        <span className="w-4 h-4 flex items-center justify-center">🆕</span>
+                                        {newCount} New
+                                    </span>
+                                )}
+                            </div>
+                        )}
                     </div>
                 </div>
 
@@ -152,6 +183,16 @@ Confirm when these migrations have been applied.`;
                                         }`}>
                                         {fix.safetyRating}
                                     </span>
+                                    {fix.status === 'RESOLVED' && (
+                                        <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-green-500/20 text-green-400 border border-green-500/20 flex items-center gap-1">
+                                            <CheckCircle2 className="w-3 h-3" /> RESOLVED
+                                        </span>
+                                    )}
+                                    {fix.status === 'NEW' && (
+                                        <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-blue-500/20 text-blue-400 border border-blue-500/20">
+                                            🆕 NEW
+                                        </span>
+                                    )}
                                     {(fix.sql.toLowerCase().includes('insert') || fix.sql.toLowerCase().includes('update')) && (
                                         <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-blue-500/20 text-blue-400 border border-blue-500/20">
                                             DATA MIGRATION
