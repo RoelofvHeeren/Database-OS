@@ -70,7 +70,7 @@ function NewAuditContent() {
                     <span className={`bg-clip-text text-transparent ${parentRunId ? 'bg-gradient-to-r from-purple-400 to-purple-600' : 'bg-gradient-to-r from-teal-400 to-teal-600'}`}>
                         {parentRunId ? 'Verify Fixes' : 'New Audit'}
                     </span>
-                    {parentRunId && <span className="text-sm font-sans font-normal text-purple-200 bg-purple-500/20 px-3 py-1 rounded-full border border-purple-500/20">Re-verification Mode</span>}
+                    {parentRunId && <span className="text-sm font-sans font-normal text-purple-200 bg-purple-500/20 px-3 py-1 rounded-full border border-purple-500/20">Verification Mode</span>}
                 </h1>
                 <p className="text-sm text-gray-400 mt-1">
                     {parentRunId

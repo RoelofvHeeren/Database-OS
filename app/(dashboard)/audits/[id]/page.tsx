@@ -85,11 +85,11 @@ export default function AuditReportPage(props: { params: Promise<{ id: string }>
 
                 <div className="flex gap-3">
                     <button
-                        onClick={() => router.push(`/audits/new?connectionId=${data.connectionId}`)}
+                        onClick={() => router.push(`/audits/new?connectionId=${data.connectionId}&parentRunId=${params.id}`)}
                         className="flex items-center gap-2 px-4 py-2 bg-white/10 hover:bg-white/20 text-white rounded-lg transition-colors border border-white/10"
                     >
                         <ShieldCheck className="w-4 h-4" />
-                        Re-verify (Run New Audit)
+                        Verify Fixes
                     </button>
                     <button className="flex items-center gap-2 px-4 py-2 bg-[#139187]/20 hover:bg-[#139187]/30 text-[#139187] rounded-lg transition-colors border border-[#139187]/30">
                         <Download className="w-4 h-4" />
