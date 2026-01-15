@@ -194,10 +194,25 @@ async function extractConstraints(
   return result.rows.map(row => ({
     name: row.constraint_name,
     type: row.constraint_type,
-    columns: Array.isArray(row.columns) ? row.columns.filter(Boolean) : [],
+    columns: parsePgArray(row.columns),
     referencedTable: row.referenced_table,
-    referencedColumns: Array.isArray(row.referenced_columns) ? row.referenced_columns.filter(Boolean) : [],
+    referencedColumns: parsePgArray(row.referenced_columns),
   }));
+}
+
+/**
+ * Parses a PostgreSQL array (string or array) into a JS array of strings
+ */
+function parsePgArray(input: any): string[] {
+  if (!input) return [];
+  if (Array.isArray(input)) return input.filter(Boolean);
+  if (typeof input === 'string') {
+    // Handle Postgres array syntax: {item1,item2}
+    const cleaned = input.replace(/^\{|\}$/g, '');
+    if (!cleaned) return [];
+    return cleaned.split(',').map(s => s.trim()).filter(Boolean);
+  }
+  return [];
 }
 
 /**
