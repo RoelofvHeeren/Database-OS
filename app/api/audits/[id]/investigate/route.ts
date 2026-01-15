@@ -30,19 +30,21 @@ export async function POST(
         }
 
         const model = auditRun.auditResult?.modelJson as any;
-        if (!model) {
-            return NextResponse.json({ error: 'Audit model not found' }, { status: 400 });
+        const snapshot = auditRun.auditResult?.snapshotJson as any;
+
+        if (!model || !snapshot) {
+            return NextResponse.json({ error: 'Audit data not found' }, { status: 400 });
         }
 
         // Step 0: Analyze Problem (Breakdown into hypotheses)
         if (step === 'analyze') {
-            const result = await analyzeProblemStatement(hypothesis, model);
+            const result = await analyzeProblemStatement(hypothesis, snapshot, model);
             return NextResponse.json(result);
         }
 
         // Step 1: Generate SQL from Hypothesis
         if (step === 'generate') {
-            const result = await generateVerificationQuery(hypothesis, model);
+            const result = await generateVerificationQuery(hypothesis, snapshot, model);
             return NextResponse.json(result);
         }
 
