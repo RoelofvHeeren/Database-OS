@@ -54,7 +54,6 @@ export async function processNextAuditJob(): Promise<void> {
         }
     }
 }
-}
 
 async function executeAuditJob(auditRun: any): Promise<void> {
     try {
