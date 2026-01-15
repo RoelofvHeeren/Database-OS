@@ -331,8 +331,13 @@ export default function AuditReportPage(props: { params: Promise<{ id: string }>
                     </div>
                 )}
 
+                {/* ANTI-GRAVITY TAB (Interactive Investigator) */}
+                {activeTab === 'anti-gravity' && (
+                    <InvestigatorTab auditId={id} />
+                )}
+
                 {/* Placeholder for other tabs - MVP Implementation */}
-                {['entity-map', 'divergence', 'anti-gravity'].includes(activeTab) && (
+                {['entity-map', 'divergence'].includes(activeTab) && (
                     <div className="flex flex-col items-center justify-center py-20 bg-white/5 border border-white/10 rounded-2xl border-dashed">
                         <Wrench className="w-12 h-12 text-gray-600 mb-4" />
                         <h3 className="text-xl font-bold text-white mb-2">Under Construction</h3>
@@ -340,6 +345,220 @@ export default function AuditReportPage(props: { params: Promise<{ id: string }>
                         <p className="text-xs text-gray-600 font-mono">Tab: {activeTab}</p>
                     </div>
                 )}
+            </div>
+        </div>
+    );
+}
+
+function InvestigatorTab({ auditId }: { auditId: string }) {
+    const [hypothesis, setHypothesis] = useState('');
+    const [stage, setStage] = useState<'input' | 'generating' | 'confirm_sql' | 'executing' | 'analysis'>('input');
+    const [generatedSql, setGeneratedSql] = useState('');
+    const [explanation, setExplanation] = useState('');
+    const [rows, setRows] = useState<any[]>([]);
+    const [analysis, setAnalysis] = useState<any>(null);
+
+    const generateQuery = async () => {
+        if (!hypothesis.trim()) return;
+        setStage('generating');
+        try {
+            const res = await fetch(`/api/audits/${auditId}/investigate`, {
+                method: 'POST',
+                body: JSON.stringify({ hypothesis, step: 'generate' }),
+            });
+            const data = await res.json();
+            setGeneratedSql(data.verificationSql);
+            setExplanation(data.explanation);
+            setStage('confirm_sql');
+        } catch (err) {
+            console.error(err);
+            setStage('input');
+        }
+    };
+
+    const runVerification = async () => {
+        setStage('executing');
+        try {
+            const res = await fetch(`/api/audits/${auditId}/investigate`, {
+                method: 'POST',
+                body: JSON.stringify({ hypothesis, step: 'execute', sql: generatedSql }),
+            });
+            const data = await res.json();
+            setRows(data.rows || []);
+            setAnalysis(data.analysis);
+            setStage('analysis');
+        } catch (err) {
+            console.error(err);
+            setStage('confirm_sql');
+        }
+    };
+
+    const reset = () => {
+        setStage('input');
+        setHypothesis('');
+        setGeneratedSql('');
+        setRows([]);
+        setAnalysis(null);
+    };
+
+    return (
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+            {/* Left Panel: Input & Control */}
+            <div className="lg:col-span-2 space-y-6">
+                <div className="bg-white/5 backdrop-blur-md border border-white/10 rounded-2xl p-6">
+                    <div className="flex items-center gap-3 mb-4">
+                        <div className="p-2 bg-purple-500/20 rounded-lg">
+                            <BookOpen className="w-5 h-5 text-purple-400" />
+                        </div>
+                        <h3 className="text-xl font-bold text-white font-serif">Anti-Gravity Investigator</h3>
+                    </div>
+
+                    <p className="text-gray-400 mb-6 text-sm">
+                        Describe a suspected data issue in plain English. The AI will translate it into a verification query and analyze the results.
+                    </p>
+
+                    <div className="space-y-4">
+                        <div>
+                            <label className="block text-xs font-mono text-gray-500 mb-2 uppercase">Hypothesis</label>
+                            <textarea
+                                value={hypothesis}
+                                onChange={(e) => setHypothesis(e.target.value)}
+                                disabled={stage !== 'input'}
+                                placeholder="e.g. Check if any duplicate emails exist in the users table..."
+                                className="w-full h-24 bg-black/40 border border-white/10 rounded-xl p-4 text-white placeholder:text-gray-600 focus:outline-none focus:border-purple-500/50 transition-colors resize-none"
+                            />
+                        </div>
+
+                        {stage === 'input' && (
+                            <button
+                                onClick={generateQuery}
+                                disabled={!hypothesis.trim()}
+                                className="w-full py-3 bg-purple-600 hover:bg-purple-500 text-white font-semibold rounded-xl transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                            >
+                                Investigate Hypothesis
+                            </button>
+                        )}
+
+                        {stage === 'generating' && (
+                            <div className="w-full py-3 bg-white/5 text-gray-400 font-mono text-sm text-center rounded-xl animate-pulse">
+                                Translating to SQL...
+                            </div>
+                        )}
+                    </div>
+                </div>
+
+                {/* Results Section */}
+                {(stage === 'executing' || stage === 'analysis') && (
+                    <div className="bg-white/5 backdrop-blur-md border border-white/10 rounded-2xl p-6 animate-in slide-in-from-bottom-4">
+                        <h4 className="text-sm font-bold text-gray-300 mb-4 uppercase tracking-wider font-mono">Evidence</h4>
+                        {rows.length > 0 ? (
+                            <div className="bg-black/40 rounded-xl overflow-hidden border border-white/5">
+                                <div className="overflow-x-auto">
+                                    <table className="w-full text-xs text-left">
+                                        <thead className="bg-white/5 text-gray-400 font-mono">
+                                            <tr>
+                                                {Object.keys(rows[0]).map(key => (
+                                                    <th key={key} className="px-4 py-2 font-medium">{key}</th>
+                                                ))}
+                                            </tr>
+                                        </thead>
+                                        <tbody className="divide-y divide-white/5 text-gray-300">
+                                            {rows.map((row, i) => (
+                                                <tr key={i} className="hover:bg-white/5">
+                                                    {Object.values(row).map((val: any, j) => (
+                                                        <td key={j} className="px-4 py-2">{String(val)}</td>
+                                                    ))}
+                                                </tr>
+                                            ))}
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+                        ) : (
+                            <div className="py-8 text-center text-gray-500 bg-black/20 rounded-xl border border-white/5">
+                                No results found (Issue Refuted)
+                            </div>
+                        )}
+
+                        {analysis && (
+                            <div className={`mt-6 p-4 rounded-xl border ${analysis.confirmed ? 'bg-red-500/10 border-red-500/20' : 'bg-green-500/10 border-green-500/20'}`}>
+                                <div className="flex items-center gap-2 mb-2">
+                                    {analysis.confirmed ? (
+                                        <AlertTriangle className="w-5 h-5 text-red-400" />
+                                    ) : (
+                                        <CheckCircle2 className="w-5 h-5 text-green-400" />
+                                    )}
+                                    <span className={`font-bold ${analysis.confirmed ? 'text-red-400' : 'text-green-400'}`}>
+                                        {analysis.confirmed ? 'Issue Confirmed' : 'Hypothesis Refuted'}
+                                    </span>
+                                </div>
+                                <p className="text-sm text-gray-300">{analysis.evidence}</p>
+                            </div>
+                        )}
+                    </div>
+                )}
+            </div>
+
+            {/* Right Panel: SQL & Plan */}
+            <div className="space-y-6">
+                {(stage === 'confirm_sql' || stage === 'executing' || stage === 'analysis') && (
+                    <div className="bg-black/40 backdrop-blur-md border border-white/10 rounded-2xl p-6 animate-in slide-in-from-right-4">
+                        <div className="flex items-center justify-between mb-4">
+                            <h4 className="text-sm font-bold text-gray-400 uppercase tracking-wider font-mono">Verification Query</h4>
+                            <span className="text-[10px] bg-blue-500/20 text-blue-400 px-2 py-0.5 rounded-full font-bold">READ ONLY</span>
+                        </div>
+                        <p className="text-xs text-gray-500 mb-2">{explanation}</p>
+                        <div className="bg-black/60 p-3 rounded-lg border border-white/10 mb-4">
+                            <code className="text-xs font-mono text-teal-400 break-all whitespace-pre-wrap">
+                                {generatedSql}
+                            </code>
+                        </div>
+
+                        {stage === 'confirm_sql' && (
+                            <div className="flex gap-2">
+                                <button
+                                    onClick={reset}
+                                    className="flex-1 py-2 bg-white/5 hover:bg-white/10 text-gray-400 rounded-lg text-sm transition-colors"
+                                >
+                                    Cancel
+                                </button>
+                                <button
+                                    onClick={runVerification}
+                                    className="flex-1 py-2 bg-teal-600 hover:bg-teal-500 text-white font-bold rounded-lg text-sm transition-colors shadow-lg shadow-teal-900/20"
+                                >
+                                    Run Check
+                                </button>
+                            </div>
+                        )}
+                    </div>
+                )}
+
+                {analysis?.fixPlan && (
+                    <div className="bg-gradient-to-br from-teal-900/20 to-black border border-teal-500/20 rounded-2xl p-6 animate-in slide-in-from-bottom-4">
+                        <h3 className="text-lg font-bold text-white mb-4 font-serif">Proposed Solution</h3>
+                        <div className="space-y-4">
+                            {analysis.fixPlan.migrations.map((fix: any, idx: number) => (
+                                <div key={idx} className="relative group">
+                                    <p className="text-xs text-gray-400 mb-1">{fix.description}</p>
+                                    <pre className="bg-black/50 p-3 rounded-lg text-[10px] font-mono text-gray-300 overflow-x-auto border border-white/5">
+                                        {fix.sql}
+                                    </pre>
+                                    <button
+                                        onClick={() => navigator.clipboard.writeText(fix.sql)}
+                                        className="absolute bottom-2 right-2 p-1.5 bg-white/10 hover:bg-white/20 rounded text-white opacity-0 group-hover:opacity-100 transition-opacity"
+                                        title="Copy SQL"
+                                    >
+                                        <Download className="w-3 h-3" />
+                                    </button>
+                                </div>
+                            ))}
+                        </div>
+                        <button onClick={reset} className="w-full mt-6 py-2 bg-white/5 hover:bg-white/10 text-gray-400 text-sm rounded-lg transition-colors">
+                            Start New Investigation
+                        </button>
+                    </div>
+                )}
+
             </div>
         </div>
     );
