@@ -15,12 +15,13 @@ import {
     ArrowRight,
     ShieldCheck
 } from 'lucide-react';
-import { notFound } from 'next/navigation';
+import { notFound, useRouter } from 'next/navigation';
 import FixPackTab from '@/components/FixPackTab';
 import EntityMapTab from '@/components/EntityMapTab';
 import DivergenceTab from '@/components/DivergenceTab';
 
 export default function AuditReportPage(props: { params: Promise<{ id: string }> }) {
+    const router = useRouter();
     const params = use(props.params);
     const { id } = params;
     const [activeTab, setActiveTab] = useState('overview');
