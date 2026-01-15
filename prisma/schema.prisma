@@ -32,6 +32,12 @@ model AuditRun {
   completedAt   DateTime?    @map("completed_at")
   createdAt     DateTime     @default(now()) @map("created_at")
   userInput     String?      @map("user_input")
+  
+  // Self-relation for Re-verification chains
+  parentRunId   String?      @map("parent_run_id")
+  parentRun     AuditRun?    @relation("AuditChain", fields: [parentRunId], references: [id])
+  childRuns     AuditRun[]   @relation("AuditChain")
+
   auditResult   AuditResult?
 
   @@index([connectionId])

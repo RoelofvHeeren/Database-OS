@@ -17,6 +17,18 @@ export async function GET(
                     },
                 },
                 auditResult: true,
+                parentRun: {
+                    select: {
+                        id: true,
+                        createdAt: true,
+                        auditResult: {
+                            select: {
+                                issuesJson: true,
+                                snapshotJson: true
+                            }
+                        }
+                    }
+                }
             },
         });
 

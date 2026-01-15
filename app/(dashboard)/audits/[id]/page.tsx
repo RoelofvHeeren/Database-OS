@@ -145,6 +145,81 @@ export default function AuditReportPage(props: { params: Promise<{ id: string }>
                 </div>
             </div>
 
+            {/* VERIFICATION REPORT (Comparison) */}
+            {data.parentRun && data.parentRun.auditResult && (
+                <div className="bg-gradient-to-r from-purple-900/40 to-black border border-purple-500/30 rounded-2xl p-6 mb-8 relative overflow-hidden">
+                    <div className="absolute top-0 right-0 p-32 bg-purple-500/10 blur-[100px] rounded-full pointer-events-none" />
+
+                    <div className="relative z-10">
+                        <div className="flex items-center gap-3 mb-6">
+                            <div className="p-2 bg-purple-500/20 rounded-lg border border-purple-500/30">
+                                <CheckCircle2 className="w-6 h-6 text-purple-400" />
+                            </div>
+                            <div>
+                                <h3 className="text-xl font-bold text-white font-serif">Verification Report</h3>
+                                <p className="text-sm text-purple-200/80">
+                                    Comparing results against previous run ({new Date(data.parentRun.createdAt).toLocaleDateString()})
+                                </p>
+                            </div>
+                        </div>
+
+                        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                            {(() => {
+                                const oldIssues = data.parentRun.auditResult.issuesJson?.length || 0;
+                                const newIssues = issues.length;
+                                const diff = oldIssues - newIssues;
+
+                                return (
+                                    <>
+                                        <div className="bg-black/40 rounded-xl p-4 border border-purple-500/20">
+                                            <p className="text-xs text-purple-300 uppercase font-bold tracking-wider mb-2">Issues Resolved</p>
+                                            <div className="flex items-baseline gap-2">
+                                                <span className="text-3xl font-bold text-white">{newIssues}</span>
+                                                <span className="text-sm text-gray-400 line-through">{oldIssues}</span>
+                                                {diff > 0 && <span className="text-sm font-bold text-green-400 bg-green-500/10 px-2 py-0.5 rounded-full ml-auto">-{diff} FIXED</span>}
+                                            </div>
+                                        </div>
+
+                                        <div className="bg-black/40 rounded-xl p-4 border border-purple-500/20">
+                                            <p className="text-xs text-purple-300 uppercase font-bold tracking-wider mb-2">Health Score</p>
+                                            <div className="flex items-baseline gap-2">
+                                                <span className="text-3xl font-bold text-white">{stats.healthScore}%</span>
+                                                <span className="text-sm text-gray-400">
+                                                    was {Math.max(0, 100 - (oldIssues * 2))}%
+                                                </span>
+                                                {stats.healthScore > Math.max(0, 100 - (oldIssues * 2)) && (
+                                                    <span className="text-sm font-bold text-green-400 bg-green-500/10 px-2 py-0.5 rounded-full ml-auto">
+                                                        IMPROVED
+                                                    </span>
+                                                )}
+                                            </div>
+                                        </div>
+
+                                        <div className="flex items-center justify-center">
+                                            {newIssues === 0 ? (
+                                                <div className="text-center">
+                                                    <p className="text-2xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-green-400 to-emerald-600">
+                                                        All Clear! 🎉
+                                                    </p>
+                                                    <p className="text-sm text-gray-400">Fixes verified successfully.</p>
+                                                </div>
+                                            ) : (
+                                                <div className="text-center">
+                                                    <p className="text-lg font-bold text-orange-400">
+                                                        {newIssues} Issues Remain
+                                                    </p>
+                                                    <p className="text-xs text-gray-400">Review remaining items below.</p>
+                                                </div>
+                                            )}
+                                        </div>
+                                    </>
+                                );
+                            })()}
+                        </div>
+                    </div>
+                </div>
+            )}
+
             {/* Tab Navigation */}
             <div className="bg-white/5 backdrop-blur-md border border-white/10 rounded-2xl overflow-hidden p-1">
                 <nav className="flex overflow-x-auto no-scrollbar">

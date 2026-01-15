@@ -21,6 +21,7 @@ function NewAuditContent() {
     const router = useRouter();
     const searchParams = useSearchParams();
     const initialConnectionId = searchParams.get('connectionId') || '';
+    const parentRunId = searchParams.get('parentRunId');
 
     const [connections, setConnections] = useState<Connection[]>([]);
     const [selectedId, setSelectedId] = useState(initialConnectionId);
@@ -45,7 +46,11 @@ function NewAuditContent() {
             const res = await fetch('/api/audits', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ connectionId: selectedId, userInput }),
+                body: JSON.stringify({
+                    connectionId: selectedId,
+                    userInput,
+                    parentRunId
+                }),
             });
 
             const data = await res.json();
@@ -62,12 +67,16 @@ function NewAuditContent() {
         <div className="max-w-4xl mx-auto space-y-8">
             <div>
                 <h1 className="font-serif text-3xl font-bold text-white flex items-center gap-3">
-                    <span className="bg-gradient-to-r from-teal-400 to-teal-600 bg-clip-text text-transparent">
-                        New Audit
+                    <span className={`bg-clip-text text-transparent ${parentRunId ? 'bg-gradient-to-r from-purple-400 to-purple-600' : 'bg-gradient-to-r from-teal-400 to-teal-600'}`}>
+                        {parentRunId ? 'Verify Fixes' : 'New Audit'}
                     </span>
+                    {parentRunId && <span className="text-sm font-sans font-normal text-purple-200 bg-purple-500/20 px-3 py-1 rounded-full border border-purple-500/20">Re-verification Mode</span>}
                 </h1>
                 <p className="text-sm text-gray-400 mt-1">
-                    Run a comprehensive integrity check on your database
+                    {parentRunId
+                        ? 'Running a follow-up audit to verify applied fixes and data migration.'
+                        : 'Run a comprehensive integrity check on your database'
+                    }
                 </p>
             </div>
 
