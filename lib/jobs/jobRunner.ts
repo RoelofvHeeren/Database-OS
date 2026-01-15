@@ -103,7 +103,16 @@ async function executeAuditJob(auditRun: any): Promise<void> {
         await client.connect();
 
         try {
-            const issues = await runAudit(normalizedSnapshot as any, model, client);
+            console.log('[Job] Starting audit modules');
+
+            // Wrap runAudit in its own timeout since it's where hangs occur
+            const auditPromise = runAudit(normalizedSnapshot as any, model, client);
+            const auditTimeout = new Promise((_, reject) =>
+                setTimeout(() => reject(new Error('Audit modules timeout after 3 minutes')), 3 * 60 * 1000)
+            );
+
+            const issues = await Promise.race([auditPromise, auditTimeout]) as any[];
+            console.log('[Job] Audit modules complete:', issues.length, 'issues');
 
             await updateProgress(auditRun.id, 80, `Found ${issues.length} issues`);
 
