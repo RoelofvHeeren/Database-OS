@@ -29,7 +29,7 @@ export default function DashboardPage() {
                             Dashboard
                         </span>
                     </h1>
-                    <p className="text-sm text-gray-400 mt-1">
+                    <p className="text-sm text-gray-200 mt-1">
                         Overview of your database integrity status
                     </p>
                 </div>
@@ -52,7 +52,7 @@ export default function DashboardPage() {
                         <span className="text-xs text-teal-400 bg-teal-500/10 px-2 py-1 rounded-full">+12%</span>
                     </div>
                     <p className="text-3xl font-bold text-white mb-1 font-mono">98.5%</p>
-                    <p className="text-xs text-gray-400 uppercase tracking-wider">Health Score</p>
+                    <p className="text-xs text-gray-300 uppercase tracking-wider">Health Score</p>
                 </div>
 
                 <div className="bg-white/5 backdrop-blur-md border border-white/10 rounded-2xl p-6 hover:bg-white/10 transition-colors">
@@ -63,7 +63,7 @@ export default function DashboardPage() {
                         <span className="text-xs text-orange-400 bg-orange-500/10 px-2 py-1 rounded-full">+5</span>
                     </div>
                     <p className="text-3xl font-bold text-white mb-1 font-mono">24</p>
-                    <p className="text-xs text-gray-400 uppercase tracking-wider">Active Issues</p>
+                    <p className="text-xs text-gray-300 uppercase tracking-wider">Active Issues</p>
                 </div>
 
                 <div className="bg-white/5 backdrop-blur-md border border-white/10 rounded-2xl p-6 hover:bg-white/10 transition-colors">
