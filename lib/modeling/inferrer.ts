@@ -134,6 +134,17 @@ function inferIdentityKeys(snapshot: DbSnapshot): IdentityKey[] {
             }
             // UUID detection
             else if (column.dataType === 'uuid' && columnLower.includes('id')) {
+                // Heuristic: If it ends in _id and is NOT the primary key/unique, it's likely a Foreign Key
+                // We only want to treat non-PK UUIDs as identity keys if they are unique
+                // Otherwise, we get false positives on Foreign Keys (e.g. user_id in orders table)
+                const isForeignKeyPattern = columnLower.endsWith('_id') || columnLower.endsWith('id');
+                const isPrimaryKey = column.isPrimaryKey;
+                const isUnique = column.isUnique;
+
+                if (isForeignKeyPattern && !isPrimaryKey && !isUnique) {
+                    continue; // Skip potential foreign keys that aren't unique
+                }
+
                 keyType = 'uuid';
                 confidence = 0.7;
             }
