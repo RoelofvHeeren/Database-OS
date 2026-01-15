@@ -23,6 +23,32 @@ export async function processNextAuditJob(): Promise<void> {
         return; // No jobs to process
     }
 
+    // Wrap entire job in a timeout to prevent indefinite hangs
+    const jobPromise = executeAuditJob(auditRun);
+    const timeoutPromise = new Promise((_, reject) =>
+        setTimeout(() => reject(new Error('Audit job timeout after 10 minutes')), 10 * 60 * 1000)
+    );
+
+    try {
+        await Promise.race([jobPromise, timeoutPromise]);
+    } catch (error) {
+        console.error('[Job Runner] Audit failed or timed out:', error);
+        await prisma.auditRun.update({
+            where: { id: auditRun.id },
+            data: {
+                status: 'FAILED',
+                completedAt: new Date(),
+            },
+        });
+        await updateProgress(
+            auditRun.id,
+            0,
+            `Audit failed: ${error instanceof Error ? error.message : 'Unknown error'}`
+        );
+    }
+}
+
+async function executeAuditJob(auditRun: any): Promise<void> {
     try {
         // Mark as running
         await prisma.auditRun.update({
