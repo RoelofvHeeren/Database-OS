@@ -47,10 +47,12 @@ CRITICAL REQUIREMENT 2: RESOLVING DIVERGENCE & AMBIGUITY
 - Strategy 3: Create a "Link Table" if it's actually Many-to-Many.
 - PROVIDE A MIGRATION TO FIX THIS. Do not just ignore it.
 
-CRITICAL REQUIREMENT 3: TYPE CONSISTENCY (UUID vs INT)
+CRITICAL REQUIREMENT 3: TYPE CONSISTENCY (UUID vs INT vs TEXT)
 - ALWAYS match the existing column types for Foreign Keys. 
-- If the database uses UUIDs, DO NOT use INT for link tables or new IDs.
-- Pay close attention to the provided issue summary for clues about existing types.
+- CHECK THE SCHEMA. If \`users.id\` is UUID, your new FK column MUST be UUID.
+- IF you start with a TEXT column (e.g. \`agent_id\` is currently varchar) and join it to a UUID column:
+- YOU MUST CAST IT: \`... ON t1.agent_id::uuid = t2.id\` or \`ALTER TABLE ... TYPE uuid USING agent_id::uuid\`.
+- NEVER try to compare UUID and VARCHAR without a cast. It will fail with "operator does not exist".
 
 CRITICAL REQUIREMENT 4: NAMING CONVENTIONS
 - For Link Tables, use the suffix "_link" unless the issue summary suggests a different project-specific convention.
