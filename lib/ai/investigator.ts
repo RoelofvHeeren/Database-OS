@@ -20,6 +20,19 @@ export interface InvestigationAnalysis {
     fixPlan?: FixPlan;
 }
 
+export interface ProblemAnalysis {
+    problem: string;
+    hypotheses: AnalyzedHypothesis[];
+}
+
+export interface AnalyzedHypothesis {
+    id: string;
+    title: string;
+    description: string;
+    likelihood: 'HIGH' | 'MEDIUM' | 'LOW';
+}
+
+
 function getModel(): string {
     return process.env.OPENAI_MODEL || 'gpt-4o';
 }
@@ -146,5 +159,62 @@ Response JSON format:
             confirmed: true, // Assume true if we have rows but AI failed
             evidence: `Found ${rows.length} rows matching the criteria.`,
         };
+    }
+}
+
+/**
+ * Breaks down a vague problem statement into specific database hypotheses
+ */
+export async function analyzeProblemStatement(
+    problem: string,
+    model: InferredModel
+): Promise<ProblemAnalysis> {
+    const prompt = `You are a Senior Database Architect. Analyze this user problem and brainstorm potential database-level causes.
+
+USER PROBLEM: "${problem}"
+
+DATABASE CONTEXT:
+Entities: ${model.entities.map(e => e.tableName).join(', ')}
+Relationships: ${model.relationships.map(r => `${r.fromTable} -> ${r.toTable}`).join(', ')}
+
+RULES:
+1. Brainstorm 3-5 specific, testable hypotheses about what could be wrong in the database.
+2. Focus on: missing rows, disconnected relationships (missing FKs), duplicate data, or missing columns.
+3. Ignore application-layer bugs (JS/Frontend) unless they leave a trace in the DB.
+4. Output JSON only.
+
+Response JSON format:
+{
+  "hypotheses": [
+    {
+      "id": "hyp_1",
+      "title": "Missing Link in Tasks Table",
+      "description": "Check if the 'tasks' table has a 'calendar_event_id' column that is null.",
+      "likelihood": "HIGH"
+    }
+  ]
+}`;
+
+    try {
+        const completion = await openai.chat.completions.create({
+            model: getModel(),
+            messages: [
+                { role: 'system', content: 'You are a database detective. Output JSON only.' },
+                { role: 'user', content: prompt }
+            ],
+            response_format: { type: 'json_object' },
+        });
+
+        const content = completion.choices[0].message.content;
+        if (!content) throw new Error('No response from AI');
+
+        const result = JSON.parse(content);
+        return {
+            problem,
+            hypotheses: result.hypotheses || []
+        };
+    } catch (error) {
+        console.error('Problem analysis failed:', error);
+        throw new Error('Failed to analyze problem statement');
     }
 }

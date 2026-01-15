@@ -1,7 +1,7 @@
 
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '../../../../../lib/db';
-import { generateVerificationQuery, analyzeInvestigationResults } from '../../../../../lib/ai/investigator';
+import { generateVerificationQuery, analyzeInvestigationResults, analyzeProblemStatement } from '../../../../../lib/ai/investigator';
 import { Client } from 'pg';
 import { decrypt } from '../../../../../lib/encryption/crypto';
 
@@ -32,6 +32,12 @@ export async function POST(
         const model = auditRun.auditResult?.modelJson as any;
         if (!model) {
             return NextResponse.json({ error: 'Audit model not found' }, { status: 400 });
+        }
+
+        // Step 0: Analyze Problem (Breakdown into hypotheses)
+        if (step === 'analyze') {
+            const result = await analyzeProblemStatement(hypothesis, model);
+            return NextResponse.json(result);
         }
 
         // Step 1: Generate SQL from Hypothesis

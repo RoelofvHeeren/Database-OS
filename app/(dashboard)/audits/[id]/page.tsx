@@ -352,19 +352,42 @@ export default function AuditReportPage(props: { params: Promise<{ id: string }>
 
 function InvestigatorTab({ auditId }: { auditId: string }) {
     const [hypothesis, setHypothesis] = useState('');
-    const [stage, setStage] = useState<'input' | 'generating' | 'confirm_sql' | 'executing' | 'analysis'>('input');
+    const [stage, setStage] = useState<'input' | 'analyzing' | 'selecting' | 'generating' | 'confirm_sql' | 'executing' | 'analysis'>('input');
     const [generatedSql, setGeneratedSql] = useState('');
     const [explanation, setExplanation] = useState('');
     const [rows, setRows] = useState<any[]>([]);
     const [analysis, setAnalysis] = useState<any>(null);
+    const [hypotheses, setHypotheses] = useState<any[]>([]);
 
-    const generateQuery = async () => {
+    const analyzeProblem = async () => {
         if (!hypothesis.trim()) return;
-        setStage('generating');
+        setStage('analyzing');
         try {
             const res = await fetch(`/api/audits/${auditId}/investigate`, {
                 method: 'POST',
-                body: JSON.stringify({ hypothesis, step: 'generate' }),
+                body: JSON.stringify({ hypothesis, step: 'analyze' }),
+            });
+            const data = await res.json();
+            setHypotheses(data.hypotheses || []);
+            setStage('selecting');
+        } catch (err) {
+            console.error(err);
+            setStage('input');
+        }
+    };
+
+    const generateQuery = async (selectedHypothesis?: string) => {
+        const inputHypothesis = selectedHypothesis || hypothesis;
+        if (!inputHypothesis.trim()) return;
+
+        setStage('generating');
+        // If selecting a specific hypothesis, update the input text to match it for clarity
+        if (selectedHypothesis) setHypothesis(selectedHypothesis);
+
+        try {
+            const res = await fetch(`/api/audits/${auditId}/investigate`, {
+                method: 'POST',
+                body: JSON.stringify({ hypothesis: inputHypothesis, step: 'generate' }),
             });
             const data = await res.json();
             setGeneratedSql(data.verificationSql);
@@ -399,6 +422,7 @@ function InvestigatorTab({ auditId }: { auditId: string }) {
         setGeneratedSql('');
         setRows([]);
         setAnalysis(null);
+        setHypotheses([]);
     };
 
     return (
@@ -430,13 +454,29 @@ function InvestigatorTab({ auditId }: { auditId: string }) {
                         </div>
 
                         {stage === 'input' && (
-                            <button
-                                onClick={generateQuery}
-                                disabled={!hypothesis.trim()}
-                                className="w-full py-3 bg-purple-600 hover:bg-purple-500 text-white font-semibold rounded-xl transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-                            >
-                                Investigate Hypothesis
-                            </button>
+                            <div className="flex gap-2">
+                                <button
+                                    onClick={analyzeProblem}
+                                    disabled={!hypothesis.trim()}
+                                    className="flex-1 py-3 bg-purple-600 hover:bg-purple-500 text-white font-semibold rounded-xl transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                                >
+                                    Analyze Problem
+                                </button>
+                                <button
+                                    onClick={() => generateQuery()}
+                                    disabled={!hypothesis.trim()}
+                                    className="px-4 py-3 bg-white/5 hover:bg-white/10 text-gray-400 font-semibold rounded-xl transition-colors disabled:opacity-50 text-xs"
+                                    title="Skip analysis and treat input as a direct hypothesis"
+                                >
+                                    Direct Check
+                                </button>
+                            </div>
+                        )}
+
+                        {stage === 'analyzing' && (
+                            <div className="w-full py-3 bg-white/5 text-gray-400 font-mono text-sm text-center rounded-xl animate-pulse">
+                                Brainstorming database hypotheses...
+                            </div>
                         )}
 
                         {stage === 'generating' && (
@@ -446,6 +486,34 @@ function InvestigatorTab({ auditId }: { auditId: string }) {
                         )}
                     </div>
                 </div>
+
+                {/* Hypothesis Selection */}
+                {stage === 'selecting' && (
+                    <div className="bg-white/5 backdrop-blur-md border border-white/10 rounded-2xl p-6 animate-in slide-in-from-bottom-4">
+                        <h4 className="text-sm font-bold text-gray-300 mb-4 uppercase tracking-wider font-mono">Potential Causes</h4>
+                        <div className="space-y-3">
+                            {hypotheses.map((hyp) => (
+                                <button
+                                    key={hyp.id}
+                                    onClick={() => generateQuery(hyp.description)}
+                                    className="w-full text-left p-4 bg-black/40 hover:bg-white/5 border border-white/5 rounded-xl transition-colors group"
+                                >
+                                    <div className="flex justify-between items-start mb-1">
+                                        <h5 className="font-bold text-white group-hover:text-purple-400 transition-colors">{hyp.title}</h5>
+                                        <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${hyp.likelihood === 'HIGH' ? 'bg-red-500/20 text-red-400' : 'bg-blue-500/20 text-blue-400'
+                                            }`}>
+                                            {hyp.likelihood} LIKELIHOOD
+                                        </span>
+                                    </div>
+                                    <p className="text-sm text-gray-400">{hyp.description}</p>
+                                </button>
+                            ))}
+                        </div>
+                        <button onClick={() => setStage('input')} className="mt-4 text-xs text-gray-500 hover:text-white transition-colors">
+                            ← Back to input
+                        </button>
+                    </div>
+                )}
 
                 {/* Results Section */}
                 {(stage === 'executing' || stage === 'analysis') && (
