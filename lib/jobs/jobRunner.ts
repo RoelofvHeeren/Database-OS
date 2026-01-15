@@ -94,12 +94,20 @@ export async function processNextAuditJob(): Promise<void> {
                 await updateProgress(auditRun.id, 90, 'Investigating user-reported issue...');
                 try {
                     const { runProactiveInvestigation } = await import('../ai/proactiveInvestigator');
-                    const investigationResult = await runProactiveInvestigation(
+
+                    // Add timeout to prevent hanging
+                    const investigationPromise = runProactiveInvestigation(
                         auditRun.userInput,
                         normalizedSnapshot as any,
-                        model, // Pass inferred model
-                        client // Pass DB client
+                        model,
+                        client
                     );
+
+                    const timeoutPromise = new Promise((_, reject) =>
+                        setTimeout(() => reject(new Error('Investigation timeout after 5 minutes')), 5 * 60 * 1000)
+                    );
+
+                    const investigationResult = await Promise.race([investigationPromise, timeoutPromise]) as any;
 
                     proactiveIssues = investigationResult.issues;
                     investigationLog = investigationResult.log;
@@ -109,7 +117,12 @@ export async function processNextAuditJob(): Promise<void> {
                         aiGeneratedPlan.migrations.push(...investigationResult.fixPlan.migrations);
                     }
                 } catch (err) {
-                    console.error('Proactive investigation failed', err);
+                    console.error('[Proactive Investigation] Failed:', err);
+                    investigationLog = {
+                        error: err instanceof Error ? err.message : String(err),
+                        stack: err instanceof Error ? err.stack : undefined
+                    };
+                    await updateProgress(auditRun.id, 90, `Proactive investigation failed: ${err instanceof Error ? err.message : 'Unknown error'}`);
                 }
             }
 
