@@ -24,7 +24,7 @@ export async function runProactiveInvestigation(
     const migrations: any[] = [];
 
     // 1. Analyze Problem -> Hypotheses
-    const analysis = await analyzeProblemStatement(problem, model);
+    const analysis = await analyzeProblemStatement(problem, model, snapshot);
     log.push({ step: 'analyze', result: analysis });
 
     // Filter for High/Medium likelihood
@@ -35,7 +35,7 @@ export async function runProactiveInvestigation(
 
         try {
             // 2. Generate SQL
-            const verification = await generateVerificationQuery(hypothesis.description, model);
+            const verification = await generateVerificationQuery(hypothesis.description, model, snapshot);
             log.push({ step: 'generate', hypothesis: hypothesis.id, sql: verification.verificationSql });
 
             // 3. Execute

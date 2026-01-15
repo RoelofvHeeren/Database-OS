@@ -1,6 +1,7 @@
 
 import OpenAI from 'openai';
 import { InferredModel } from '../modeling/types';
+import { DbSnapshot } from '../introspection/types';
 import { FixPlan, SqlFix } from '../audit/engine/types';
 
 const openai = new OpenAI({
@@ -42,7 +43,8 @@ function getModel(): string {
  */
 export async function generateVerificationQuery(
     hypothesis: string,
-    model: InferredModel
+    model: InferredModel,
+    snapshot: DbSnapshot
 ): Promise<InvestigationResult> {
     const prompt = `You are a PostgreSQL expert. Convert this hypothesis into a SQL verification query.
 
@@ -51,6 +53,12 @@ HYPOTHESIS: "${hypothesis}"
 DATABASE CONTEXT:
 Entities: ${model.entities.map(e => e.tableName).join(', ')}
 Relationships: ${model.relationships.map(r => `${r.fromTable} -> ${r.toTable}`).join(', ')}
+
+FULL SCHEMA:
+${snapshot.tables.map(t => `
+Table: ${t.schema}.${t.name}
+Columns: ${t.columns.map(c => `${c.name} (${c.dataType}${c.isPrimaryKey ? ', PK' : ''}${c.isUnique ? ', Unique' : ''})`).join(', ')}
+`).join('\n')}
 
 RULES:
 1. Return a SELECT query that returns rows proving the issue exists.
@@ -180,7 +188,8 @@ Response JSON format:
  */
 export async function analyzeProblemStatement(
     problem: string,
-    model: InferredModel
+    model: InferredModel,
+    snapshot: DbSnapshot
 ): Promise<ProblemAnalysis> {
     const prompt = `You are a Senior Database Architect. Analyze this user problem and brainstorm potential database-level causes.
 
@@ -189,6 +198,12 @@ USER PROBLEM: "${problem}"
 DATABASE CONTEXT:
 Entities: ${model.entities.map(e => e.tableName).join(', ')}
 Relationships: ${model.relationships.map(r => `${r.fromTable} -> ${r.toTable}`).join(', ')}
+
+FULL SCHEMA:
+${snapshot.tables.map(t => `
+Table: ${t.schema}.${t.name}
+Columns: ${t.columns.map(c => `${c.name} (${c.dataType}${c.isPrimaryKey ? ', PK' : ''}${c.isUnique ? ', Unique' : ''})`).join(', ')}
+`).join('\n')}
 
 RULES:
 1. Brainstorm 3-5 specific, testable hypotheses about what could be wrong in the database.
