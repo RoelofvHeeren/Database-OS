@@ -50,6 +50,11 @@ export default function FixPackTab({ auditResult }: { auditResult: any }) {
 The user is fixing database integrity issues identified by an automated audit. 
 The goal is to apply the following SQL migrations and update application code to align with the new schema.
 
+PRE-FLIGHT CHECK (CRITICAL):
+1. Environment Mismatch: The audit may have run on a different DB (Dev) than the target (Prod).
+2. Check Table Existence: Before running any "ALTER TABLE" commands below, verify the table exists.
+3. If a table (e.g. 'companies') is missing entirely, YOU MUST CREATE IT FIRST. Do not try to ALTER a non-existent table.
+
 INSTRUCTIONS FOR AI ASSISTANT:
 1. Review the provided SQL migrations and Application Instructions below.
 2. Guide the user through applying these changes step-by-step.
@@ -123,14 +128,14 @@ Confirm when these migrations have been applied.`;
                             key={idx}
                             onClick={() => toggleSelect(idx)}
                             className={`relative border rounded-xl p-4 transition-all cursor-pointer group ${selectedIndices.includes(idx)
-                                    ? 'bg-teal-500/10 border-teal-500/50'
-                                    : 'bg-black/20 border-white/10 hover:border-white/20'
+                                ? 'bg-teal-500/10 border-teal-500/50'
+                                : 'bg-black/20 border-white/10 hover:border-white/20'
                                 }`}
                         >
                             <div className="absolute top-4 right-4">
                                 <div className={`w-5 h-5 rounded-full border flex items-center justify-center transition-colors ${selectedIndices.includes(idx)
-                                        ? 'bg-teal-500 border-teal-500'
-                                        : 'border-gray-600 group-hover:border-gray-400'
+                                    ? 'bg-teal-500 border-teal-500'
+                                    : 'border-gray-600 group-hover:border-gray-400'
                                     }`}>
                                     {selectedIndices.includes(idx) && <CheckCircle2 className="w-3.5 h-3.5 text-black" />}
                                 </div>
@@ -142,8 +147,8 @@ Confirm when these migrations have been applied.`;
                                         {fix.description}
                                     </h4>
                                     <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${fix.safetyRating === 'SAFE' ? 'bg-green-500/20 text-green-400' :
-                                            fix.safetyRating === 'RISKY' ? 'bg-orange-500/20 text-orange-400' :
-                                                'bg-red-500/20 text-red-400'
+                                        fix.safetyRating === 'RISKY' ? 'bg-orange-500/20 text-orange-400' :
+                                            'bg-red-500/20 text-red-400'
                                         }`}>
                                         {fix.safetyRating}
                                     </span>
