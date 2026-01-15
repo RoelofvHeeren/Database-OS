@@ -39,6 +39,8 @@ export const constraintGapsModule: AuditModule = {
 
         // Check for foreign key candidates without constraints
         for (const table of snapshot.tables) {
+            if (!Array.isArray(table.columns)) continue;
+
             const fkCandidates = table.columns.filter(col => {
                 const colLower = col.name.toLowerCase();
                 const hasIdSuffix = colLower.endsWith('_id') || colLower.endsWith('id');

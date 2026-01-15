@@ -17,6 +17,8 @@ export const orphanRowsModule: AuditModule = {
         for (const table of snapshot.tables) {
             if (!budgetTracker.canRunQuery()) break;
 
+            if (!Array.isArray(table.columns)) continue;
+
             // Find columns that look like foreign keys but have no constraint
             const fkCandidates = table.columns.filter(col => {
                 const colLower = col.name.toLowerCase();

@@ -15,6 +15,8 @@ export const metricRiskModule: AuditModule = {
 
         // Find tables with multiple potential parent relationships
         for (const table of snapshot.tables) {
+            if (!Array.isArray(table.columns)) continue;
+
             const fkColumns = table.columns.filter(col => {
                 const colLower = col.name.toLowerCase();
                 return (colLower.endsWith('_id') || colLower.endsWith('id')) && col.name !== 'id';
