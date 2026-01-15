@@ -76,6 +76,17 @@ export const constraintGapsModule: AuditModule = {
                         impact: 'Allows orphan rows and referential integrity violations.',
                         confidence: 0.75,
                         detectionMethod: 'HEURISTIC',
+                        fixPlan: {
+                            migrations: [{
+                                description: `Add foreign key constraint on ${table.name}.${column.name}`,
+                                sql: `ALTER TABLE "${table.schema}"."${table.name}" ADD CONSTRAINT "fk_${table.name}_${column.name}" FOREIGN KEY ("${column.name}") REFERENCES "${referencedTable.schema}"."${referencedTable.name}"("id") ON DELETE SET NULL;`,
+                                safetyRating: 'SAFE',
+                                reasoning: `Enforces referential integrity between ${table.name} and ${referencedTable.name}.`
+                            }],
+                            backfills: [],
+                            verificationQueries: [],
+                            appCodeChanges: []
+                        }
                     });
                 }
             }

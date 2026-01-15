@@ -285,8 +285,54 @@ export default function AuditReportPage(props: { params: Promise<{ id: string }>
                     </div>
                 )}
 
+                {/* FIX PACK TAB */}
+                {activeTab === 'fix-pack' && (
+                    <div className="space-y-6">
+                        <div className="bg-white/5 backdrop-blur-md border border-white/10 rounded-2xl p-6">
+                            <h3 className="text-xl font-bold text-white mb-4 font-serif">Proposed Fixes</h3>
+                            <p className="text-gray-400 mb-6">Review and apply the following SQL migrations to resolve integrity issues.</p>
+
+                            {auditResult?.fixPackJson?.migrations?.length > 0 ? (
+                                <div className="space-y-4">
+                                    {auditResult.fixPackJson.migrations.map((fix: any, idx: number) => (
+                                        <div key={idx} className="bg-black/20 border border-white/10 rounded-xl p-4">
+                                            <div className="flex justify-between items-start mb-2">
+                                                <h4 className="font-semibold text-white">{fix.description}</h4>
+                                                <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${fix.safetyRating === 'SAFE' ? 'bg-green-500/20 text-green-400' :
+                                                    fix.safetyRating === 'RISKY' ? 'bg-orange-500/20 text-orange-400' :
+                                                        'bg-red-500/20 text-red-400'
+                                                    }`}>
+                                                    {fix.safetyRating}
+                                                </span>
+                                            </div>
+                                            <p className="text-sm text-gray-500 mb-3">{fix.reasoning}</p>
+                                            <div className="relative group">
+                                                <pre className="bg-black/50 p-4 rounded-lg text-xs font-mono text-gray-300 overflow-x-auto border border-white/5">
+                                                    {fix.sql}
+                                                </pre>
+                                                <button
+                                                    onClick={() => navigator.clipboard.writeText(fix.sql)}
+                                                    className="absolute top-2 right-2 bg-white/10 hover:bg-white/20 p-1.5 rounded text-white opacity-0 group-hover:opacity-100 transition-opacity"
+                                                    title="Copy SQL"
+                                                >
+                                                    <Download className="w-4 h-4" />
+                                                </button>
+                                            </div>
+                                        </div>
+                                    ))}
+                                </div>
+                            ) : (
+                                <div className="flex flex-col items-center justify-center py-12 text-gray-500">
+                                    <CheckCircle2 className="w-12 h-12 mb-4 opacity-50 text-teal-500" />
+                                    <p>No automatic fixes generated for the current issues.</p>
+                                </div>
+                            )}
+                        </div>
+                    </div>
+                )}
+
                 {/* Placeholder for other tabs - MVP Implementation */}
-                {['entity-map', 'divergence', 'fix-pack', 'anti-gravity'].includes(activeTab) && (
+                {['entity-map', 'divergence', 'anti-gravity'].includes(activeTab) && (
                     <div className="flex flex-col items-center justify-center py-20 bg-white/5 border border-white/10 rounded-2xl border-dashed">
                         <Wrench className="w-12 h-12 text-gray-600 mb-4" />
                         <h3 className="text-xl font-bold text-white mb-2">Under Construction</h3>

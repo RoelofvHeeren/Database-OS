@@ -112,6 +112,12 @@ function inferIdentityKeys(snapshot: DbSnapshot): IdentityKey[] {
             let keyType: IdentityKey['keyType'] | null = null;
             let confidence = 0.6;
 
+            // Content column exclusion (prevent "email_subject", "email_body" being treated as identities)
+            const contentKeywords = ['subject', 'body', 'content', 'message', 'description', 'template', 'header', 'footer'];
+            if (contentKeywords.some(kw => columnLower.includes(kw))) {
+                continue;
+            }
+
             // Email detection
             if (columnLower.includes('email')) {
                 keyType = 'email';
