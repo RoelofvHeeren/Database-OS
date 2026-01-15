@@ -60,6 +60,11 @@ CRITICAL REQUIREMENT 5: REFERENCE INTEGRITY & TABLE EXISTENCE
 - CHECK the provided "ISSUES FOUND" for context on existing tables.
 - If you are creating a Foreign Key, ENSURE the target table exists. If uncertain, add a comment in the SQL: \`-- WARNING: Verify target table name\`.
 
+CRITICAL REQUIREMENT 6: NO PLACEHOLDERS
+- YOU MUST NOT use generic placeholders like "parent_table", "target_table", "other_table".
+- YOU MUST use the actual table names from the database schema.
+- If you cannot determine the correct table name from the issue description, DO NOT generate a migration for that specific item.
+
 
 Refine the input plan into 4 categories:
 1. migrations: Array of SQL statements to fix the schema (DDL) AND move data (DML). 
