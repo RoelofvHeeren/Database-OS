@@ -271,6 +271,49 @@ Confirm when these migrations have been applied.`;
                         </ul>
                     </div>
                 )}
+
+                {/* Resolved App Instructions (Update Prompt) */}
+                {auditResult?.fixPackJson?.resolvedAppCodeChanges?.length > 0 && (
+                    <div className="bg-green-900/10 border border-green-500/20 rounded-xl p-6 mt-8 animate-in fade-in slide-in-from-bottom-4">
+                        <div className="flex justify-between items-start mb-4">
+                            <div>
+                                <h4 className="text-lg font-bold text-green-400 mb-2 flex items-center gap-2">
+                                    <CheckCircle2 className="w-5 h-5" />
+                                    Backend Update Instructions
+                                </h4>
+                                <p className="text-sm text-gray-400">
+                                    Because you applied fixes, you MUST update your backend code to match the new schema.
+                                </p>
+                            </div>
+                            <button
+                                onClick={() => {
+                                    const prompt = `CONTEXT:
+The database schema has been updated to resolve integrity issues.
+You need to update the backend application code to align with these changes.
+
+INSTRUCTIONS:
+${auditResult.fixPackJson.resolvedAppCodeChanges.map((s: string) => `- ${s}`).join('\n')}
+
+Please update the codebase accordingly.`;
+                                    navigator.clipboard.writeText(prompt);
+                                    alert('Update prompt copied to clipboard!');
+                                }}
+                                className="flex items-center gap-2 px-4 py-2 bg-green-600 hover:bg-green-500 text-white text-sm font-semibold rounded-lg transition-all shadow-lg shadow-green-900/20"
+                            >
+                                <Share2 className="w-4 h-4" />
+                                Copy Update Prompt
+                            </button>
+                        </div>
+                        <ul className="space-y-3 bg-black/20 rounded-lg p-4 border border-white/5">
+                            {auditResult.fixPackJson.resolvedAppCodeChanges.map((instruction: string, i: number) => (
+                                <li key={i} className="flex gap-3 text-sm text-gray-300">
+                                    <span className="text-green-500 font-bold">✓</span>
+                                    <span>{instruction}</span>
+                                </li>
+                            ))}
+                        </ul>
+                    </div>
+                )}
             </div>
         </div>
     );

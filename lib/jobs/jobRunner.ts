@@ -223,6 +223,18 @@ async function executeAuditJob(auditRun: any): Promise<void> {
                         // Filter out resolved migrations from the SQL output
                         fixPack.migrations = fixPack.migrations.filter(m => m.status !== 'RESOLVED');
 
+                        // [APP CODE CHANGES] Carry over resolved instructions
+                        if (comparison.resolved.length > 0 && baselineRun.auditResult) {
+                            const baselineFixPack = baselineRun.auditResult.fixPackJson as any;
+                            if (baselineFixPack?.appCodeChanges?.length > 0) {
+                                // Since we lack precise mapping, we assume if ANY issues were resolved,
+                                // the user needs to see the previous instructions.
+                                // Ideal: Match instruction keywords to issue content.
+                                // Pragmatic: Show all instructions from parent run as "Resolved Context"
+                                fixPack.resolvedAppCodeChanges = baselineFixPack.appCodeChanges;
+                            }
+                        }
+
                         await updateProgress(
                             auditRun.id,
                             93,

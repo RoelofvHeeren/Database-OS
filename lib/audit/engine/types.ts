@@ -67,6 +67,7 @@ export interface FixPlan {
     backfills: SqlFix[];
     verificationQueries: string[];
     appCodeChanges: string[];
+    resolvedAppCodeChanges?: string[];
 }
 
 export interface SqlFix {
