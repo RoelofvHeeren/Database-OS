@@ -141,7 +141,8 @@ async function executeAuditJob(auditRun: any): Promise<void> {
             await updateProgress(auditRun.id, 80, 'Generating AI fix plans...');
 
             // Wrap AI generation in timeout
-            const planPromise = generateFixPlans(issues);
+            const tableNames = normalizedSnapshot.tables.map(t => t.name);
+            const planPromise = generateFixPlans(issues, tableNames);
             const planTimeout = new Promise((_, reject) =>
                 setTimeout(() => reject(new Error('Fix plan generation timeout after 2 minutes')), 2 * 60 * 1000)
             );

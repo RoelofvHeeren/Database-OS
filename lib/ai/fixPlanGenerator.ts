@@ -16,13 +16,14 @@ function getModel(): string {
 /**
  * Generates fix plans for audit issues using AI
  */
-export async function generateFixPlans(issues: AuditIssue[]): Promise<FixPlan> {
+export async function generateFixPlans(issues: AuditIssue[], tableNames: string[]): Promise<FixPlan> {
   if (issues.length === 0) {
     return {
       migrations: [],
       backfills: [],
       verificationQueries: [],
       appCodeChanges: [],
+      canonicalRule: undefined
     };
   }
 
@@ -55,15 +56,15 @@ CRITICAL REQUIREMENT 4: NAMING CONVENTIONS
 - For Link Tables, use the suffix "_link" unless the issue summary suggests a different project-specific convention.
 
 CRITICAL REQUIREMENT 5: REFERENCE INTEGRITY & TABLE EXISTENCE
-- DO NOT assume a table exists just because a column is named \`[entity]_id\`.
-- Example: \`agent_id\` might refer to a table named \`users\` (not \`agents\`).
-- CHECK the provided "ISSUES FOUND" for context on existing tables.
-- If you are creating a Foreign Key, ENSURE the target table exists. If uncertain, add a comment in the SQL: \`-- WARNING: Verify target table name\`.
+- THE DATABASE ONLY CONTAINS THESE TABLES:
+  ${tableNames.map(t => `- ${t}`).join('\n  ')}
+- DO NOT hallucinate other tables (e.g., do NOT assume 'agents' exists if it is not in the list).
+- If a column is named \`agent_id\`, it likely refers to \`users\` or another existing table. CHECK THE SCHEMA.
 
 CRITICAL REQUIREMENT 6: NO PLACEHOLDERS
 - YOU MUST NOT use generic placeholders like "parent_table", "target_table", "other_table".
-- YOU MUST use the actual table names from the database schema.
-- If you cannot determine the correct table name from the issue description, DO NOT generate a migration for that specific item.
+- YOU MUST use the actual table names from the list above.
+- If you cannot determine the correct table name, DO NOT generate a migration for that specific item.
 
 
 Refine the input plan into 4 categories:
