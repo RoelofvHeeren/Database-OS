@@ -119,13 +119,26 @@ ${JSON.stringify(rows, null, 2)}
 Does this confirm the issue?
 If YES, generate a Fix Plan (migrations to fix it).
 
+IMPORTANT - HUMAN READABLE REASONING:
+- The "reasoning" field in migrations MUST be simple English (e.g., "Consolidating columns prevents sync errors").
+
+IMPORTANT - APPLICATION INSTRUCTIONS:
+- Include an "appCodeChanges" array with specific instructions: "ACTION: [What to do] | REASON: [Why]"
+
 Response JSON format:
 {
   "confirmed": true/false,
   "evidence": "Explanation of findings",
   "fixPlan": {
-    "migrations": [{ "description": "...", "sql": "...", "safetyRating": "SAFE", "reasoning": "..." }]
-    // include other FixPlan fields if needed (backfills, etc)
+    "migrations": [{ 
+      "description": "...", 
+      "sql": "...", 
+      "safetyRating": "SAFE", 
+      "reasoning": "Plain English explanation for a non-technical user (e.g. 'This prevents duplicates...')" 
+    }],
+    "appCodeChanges": [
+      "ACTION: Update insert statements for 'tasks' | REASON: Use new column"
+    ]
   }
 }`;
 
