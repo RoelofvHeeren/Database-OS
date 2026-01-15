@@ -59,19 +59,24 @@ async function executeAuditJob(auditRun: any): Promise<void> {
             },
         });
 
+        console.log('[Job] Starting audit:', auditRun.id);
         await updateProgress(auditRun.id, 5, 'Starting audit...');
 
         // Decrypt connection string
         const connectionString = decrypt(auditRun.connection.encryptedUrl);
+        console.log('[Job] Connection decrypted');
 
         await updateProgress(auditRun.id, 10, 'Introspecting database schema...');
 
         // Step 1: Introspection
+        console.log('[Job] Starting introspection');
         const snapshot = await introspectDatabase(connectionString);
+        console.log('[Job] Introspection complete:', snapshot.tables.length, 'tables');
 
         await updateProgress(auditRun.id, 30, `Found ${snapshot.tables.length} tables`);
 
         // Step 2: Inference
+        console.log('[Job] Starting model inference');
         await updateProgress(auditRun.id, 35, 'Inferring entity model...');
 
         // Normalize snapshot to ensure arrays are proper arrays (Prisma JSON can return objects)
@@ -87,6 +92,7 @@ async function executeAuditJob(auditRun: any): Promise<void> {
         };
 
         const model = await inferModel(normalizedSnapshot as DbSnapshot);
+        console.log('[Job] Model inference complete:', model.entities.length, 'entities');
 
         await updateProgress(auditRun.id, 50, `Identified ${model.entities.length} entities`);
 
@@ -113,46 +119,10 @@ async function executeAuditJob(auditRun: any): Promise<void> {
             // We pass the issues to the AI to find complex patterns and comprehensive fixes
             const aiGeneratedPlan = await generateFixPlans(issues);
 
-            // [PROACTIVE] Step 5: Run Proactive Investigation (if user provided input)
-            // DISABLED for verification audits to prevent hangs
+            // [PROACTIVE] Step 5: Run Proactive Investigation
+            // COMPLETELY DISABLED - causing hangs
             let proactiveIssues = [];
             let investigationLog = null;
-
-            if (auditRun.userInput && !auditRun.parentRunId) {
-                await updateProgress(auditRun.id, 90, 'Investigating user-reported issue...');
-                try {
-                    const { runProactiveInvestigation } = await import('../ai/proactiveInvestigator');
-
-                    // Add timeout to prevent hanging
-                    const investigationPromise = runProactiveInvestigation(
-                        auditRun.userInput,
-                        normalizedSnapshot as any,
-                        model,
-                        client
-                    );
-
-                    const timeoutPromise = new Promise((_, reject) =>
-                        setTimeout(() => reject(new Error('Investigation timeout after 5 minutes')), 5 * 60 * 1000)
-                    );
-
-                    const investigationResult = await Promise.race([investigationPromise, timeoutPromise]) as any;
-
-                    proactiveIssues = investigationResult.issues;
-                    investigationLog = investigationResult.log;
-
-                    // Merge proactive fixes into the plan
-                    if (investigationResult.fixPlan) {
-                        aiGeneratedPlan.migrations.push(...investigationResult.fixPlan.migrations);
-                    }
-                } catch (err) {
-                    console.error('[Proactive Investigation] Failed:', err);
-                    investigationLog = {
-                        error: err instanceof Error ? err.message : String(err),
-                        stack: err instanceof Error ? err.stack : undefined
-                    };
-                    await updateProgress(auditRun.id, 90, `Proactive investigation failed: ${err instanceof Error ? err.message : 'Unknown error'}`);
-                }
-            }
 
             // 3. Merge plans (AI takes precedence for complex logic, but we preserve heuristic migrations)
             let fixPack = {
