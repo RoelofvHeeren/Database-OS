@@ -1,5 +1,5 @@
 import { useState, useMemo } from 'react';
-import { Database, FolderTree, Info } from 'lucide-react';
+import { Database, FolderTree, Info, Minus, Plus, Maximize } from 'lucide-react';
 import { InferredModel } from '../lib/modeling/types';
 
 interface EntityNode {

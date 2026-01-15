@@ -1,4 +1,4 @@
-import { GitBranch, AlertTriangle, Info, ShieldAlert } from 'lucide-react';
+import { GitBranch, AlertTriangle, Info, ShieldAlert, CheckCircle2 } from 'lucide-react';
 
 export default function DivergenceTab({ auditResult }: { auditResult: any }) {
     const issues = auditResult?.issuesJson || [];
